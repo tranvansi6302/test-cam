@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+    fe_ai_beauty_test:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        image: 365ejsc/lsc:fe_ai_beauty_test_v31012025
+        container_name: fe_ai_beauty_test_v31012025
+        ports:
+            - '4646:80'
+        restart: always

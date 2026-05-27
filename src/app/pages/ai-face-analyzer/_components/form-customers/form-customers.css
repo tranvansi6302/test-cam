@@ -1,0 +1,392 @@
+/* Custom scrollbar styling */
+.overflow-auto::-webkit-scrollbar {
+    width: 6px;
+}
+
+.overflow-auto::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.overflow-auto::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 10px;
+}
+
+.overflow-auto::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* Input focus styling */
+.p-inputtext:enabled:focus {
+    border-color: #4f46e5 !important;
+    box-shadow: 0 0 0 1px #e0e7ff !important;
+}
+
+/* Checkbox in service items */
+input[type='checkbox'].accent-green-600 {
+    accent-color: #16a34a;
+}
+
+/* Service item hover effect */
+.cursor-pointer:hover {
+    transition: background-color 0.2s ease;
+}
+
+/* Customer add section styling */
+.customerAddCard {
+    border: 1px solid #e5e7eb !important;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.customerAddCard:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.cardTitle {
+    background-color: rgba(16, 185, 129, 0.05);
+    font-weight: 600;
+    border-radius: 8px 8px 0 0;
+    padding: 12px 16px !important;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+}
+
+.cardBody {
+    background-color: white;
+    border-radius: 0 0 8px 8px;
+    padding: 16px !important;
+    display: flex;
+    flex-direction: column;
+    height: calc(100% - 45px);
+}
+
+/* Payment summary */
+.paymentSummary {
+    margin-top: auto;
+    padding: 0;
+    background-color: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    position: relative;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    max-width: 100%;
+}
+
+.paymentHeader {
+    background: linear-gradient(135deg, #10b981, #059669);
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    position: relative;
+}
+
+.paymentHeader h6 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.paymentHeader i {
+    font-size: 14px;
+    color: #ffffff;
+}
+
+.paymentContent {
+    padding: 12px 12px 0;
+    background-image: repeating-linear-gradient(0deg, #f3f4f6, #f3f4f6 1px, transparent 1px, transparent 25px);
+    background-position: 0 20px;
+}
+
+.paymentItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    font-size: 12px;
+    padding: 0;
+    position: relative;
+    height: 24px;
+}
+
+.paymentItem:last-child {
+    margin-bottom: 0;
+}
+
+.paymentTotal {
+    margin-top: 12px;
+    padding: 10px;
+    background-color: #f0fdf4;
+    margin-left: -12px;
+    margin-right: -12px;
+    margin-bottom: -1px;
+    border-top: 1px dashed #86efac;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    height: auto;
+}
+
+.paymentTotal .paymentLabel {
+    font-size: 13px;
+    color: #065f46;
+    font-weight: 600;
+}
+
+.paymentTotal .paymentValue {
+    font-size: 15px;
+    font-weight: 700;
+    color: #047857;
+    background: transparent;
+    border: none;
+    padding: 0;
+    min-width: 90px;
+}
+
+.paymentLabel {
+    font-weight: 500;
+    color: #4b5563;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    z-index: 1;
+    background-color: #ffffff;
+    padding-right: 5px;
+    width: 50%;
+}
+
+.paymentLabel::before {
+    content: '•';
+    color: #9ca3af;
+    font-size: 14px;
+    line-height: 0;
+    flex-shrink: 0;
+}
+
+.paymentValue {
+    font-weight: 500;
+    color: #111827;
+    background-color: #ffffff;
+    padding: 0 0 0 5px;
+    z-index: 1;
+    text-align: right;
+    width: 50%;
+    min-width: 90px;
+}
+
+.paymentItem input {
+    transition: all 0.2s;
+    border-radius: 0;
+    border: none;
+    border-bottom: 1px dashed #e5e7eb;
+    background-color: transparent;
+    padding: 4px 0;
+    text-align: right;
+    width: 100%;
+    font-size: 12px;
+    height: 24px;
+}
+
+.paymentItem input:focus {
+    outline: none;
+    border-color: #10b981;
+    box-shadow: none;
+}
+
+.paymentItem input::placeholder {
+    color: #9ca3af;
+    font-style: italic;
+    font-size: 11px;
+}
+
+/* Service section */
+.serviceCard {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    height: 100%;
+    margin-top: 0;
+}
+
+.serviceCard .cardTitle {
+    background-color: rgba(16, 185, 129, 0.05);
+    font-weight: 600;
+    border-radius: 8px 8px 0 0;
+    padding: 12px 16px !important;
+    font-size: 13px;
+}
+
+.serviceCard .cardBody {
+    background-color: white;
+    border-radius: 0 0 8px 8px;
+    padding: 10px !important;
+    display: flex;
+    flex-direction: column;
+    height: calc(100% - 45px);
+}
+
+.services {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    height: 100%;
+}
+
+.serviceHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.serviceTitle {
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #10b981;
+}
+
+.serviceTitle::before {
+    content: '';
+    display: inline-block;
+    width: 3px;
+    height: 16px;
+    background-color: #10b981;
+    border-radius: 2px;
+    margin-right: 6px;
+}
+
+.category {
+    margin-bottom: 12px;
+}
+
+.titleCate {
+    display: block;
+    padding: 4px 8px;
+    background-color: #f3f4f6;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.boxItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #f3f4f6;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.boxItem:hover {
+    background-color: #f9fafb;
+}
+
+.boxItem.checked {
+    background-color: #ecfdf5;
+    border-color: #d1fae5;
+}
+
+.scrollbarContainer {
+    height: 100%;
+    overflow: hidden;
+}
+
+.serviceBody {
+    padding: 4px;
+}
+
+.title {
+    font-size: 13px;
+}
+
+.discount {
+    width: 60px;
+    text-align: right;
+    border: none;
+    border-bottom: 1px dashed #d1d5db;
+    background: transparent;
+    transition: all 0.2s;
+}
+
+.discount:focus {
+    outline: none;
+    border-color: #10b981;
+}
+
+.discount.checked {
+    color: #10b981;
+}
+
+/* Custom CSS for form customers */
+
+/* Payment summary styles */
+.paymentSummary::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 100%;
+    height: 5px;
+    background-image: linear-gradient(45deg, transparent 33.333%, #ffffff 33.333%, #ffffff 66.667%, transparent 66.667%),
+        linear-gradient(-45deg, transparent 33.333%, #ffffff 33.333%, #ffffff 66.667%, transparent 66.667%);
+    background-size: 10px 10px;
+    background-position: 0 0;
+}
+
+.paymentContent {
+    background-image: repeating-linear-gradient(0deg, #f3f4f6, #f3f4f6 1px, transparent 1px, transparent 25px);
+    background-position: 0 20px;
+}
+
+.paymentLabel::before {
+    content: '•';
+    color: #9ca3af;
+    font-size: 14px;
+    line-height: 0;
+    flex-shrink: 0;
+}
+
+.serviceTitle::before {
+    content: '';
+    display: inline-block;
+    width: 3px;
+    height: 16px;
+    background-color: #10b981;
+    border-radius: 2px;
+    margin-right: 6px;
+}
+
+/* Other custom styles */
+input:focus,
+select:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+/* Custom transition effects */
+.transition {
+    transition: all 0.2s ease-in-out;
+}
+
+.p-dialog .p-dialog-header {
+    padding: 0 20px;
+    background-color: #f5f5f5;
+}
+.p-dialog .p-dialog-content {
+    padding-bottom: 0;
+}

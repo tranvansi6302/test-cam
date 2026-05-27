@@ -1,0 +1,348 @@
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes scan {
+    0% {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    50% {
+        transform: translateY(100vh);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(100vh);
+        opacity: 0;
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes progress {
+    0% {
+        width: 5%;
+        background-position: 0% 50%;
+    }
+    50% {
+        width: 90%;
+        background-position: 100% 50%;
+    }
+    100% {
+        width: 100%;
+        background-position: 0% 50%;
+    }
+}
+
+@keyframes glow {
+    0%,
+    100% {
+        box-shadow: 0 0 5px 1px rgba(0, 255, 255, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 20px 5px rgba(0, 255, 255, 0.6);
+    }
+}
+
+@keyframes pulse-connection {
+    0%,
+    100% {
+        opacity: 0.3;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
+@keyframes circuit-flow {
+    0% {
+        background-position: -500px 0;
+    }
+    100% {
+        background-position: 500px 0;
+    }
+}
+
+@keyframes float {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+@keyframes breathe {
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+    50% {
+        transform: scale(1.05);
+        opacity: 1;
+    }
+}
+
+@keyframes data-flow {
+    0% {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+@keyframes matrix-rain {
+    0% {
+        transform: translateY(-100vh);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    90% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(100vh);
+        opacity: 0;
+    }
+}
+
+.animate-scan {
+    animation: scan 3s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+    animation: spin 4s linear infinite;
+}
+
+.animate-spin-reverse {
+    animation: spin 3s linear infinite reverse;
+}
+
+.glow-effect {
+    animation: glow 2s ease-in-out infinite;
+}
+
+.animate-breathe {
+    animation: breathe 3s ease-in-out infinite;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 5%;
+    background: linear-gradient(
+        90deg,
+        rgba(0, 180, 216, 0.3),
+        rgba(0, 242, 255, 0.8),
+        rgba(0, 242, 255, 1),
+        rgba(0, 180, 216, 0.8),
+        rgba(0, 180, 216, 0.3)
+    );
+    background-size: 300% 100%;
+    border-radius: 10px;
+    animation: progress 4s ease-in-out infinite;
+    box-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
+}
+
+.hexagon-pattern {
+    position: absolute;
+    inset: 0;
+    opacity: 0.05;
+    background-image: repeating-linear-gradient(60deg, #80ffea 0%, transparent 1px, transparent 20px),
+        repeating-linear-gradient(-60deg, #80ffea 0%, transparent 1px, transparent 20px),
+        repeating-linear-gradient(0deg, #80ffea 0%, transparent 1px, transparent 20px);
+    animation: matrix-rain 8s linear infinite;
+}
+
+.neural-network {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.node {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background-color: #80ffea;
+    border-radius: 50%;
+    animation: float 3s ease-in-out infinite;
+    box-shadow: 0 0 10px rgba(128, 255, 234, 0.6);
+}
+
+.n1 {
+    top: 15%;
+    left: 50%;
+    animation-delay: -0.5s;
+}
+
+.n2 {
+    top: 75%;
+    left: 25%;
+    animation-delay: -0.2s;
+}
+
+.n3 {
+    top: 75%;
+    left: 75%;
+    animation-delay: -0.8s;
+}
+
+.n4 {
+    top: 45%;
+    left: 15%;
+    animation-delay: -1.2s;
+}
+
+.n5 {
+    top: 45%;
+    left: 85%;
+    animation-delay: -0.7s;
+}
+
+.connection {
+    position: absolute;
+    background: linear-gradient(90deg, transparent, rgba(128, 255, 234, 0.8), transparent);
+    height: 2px;
+    animation: pulse-connection 3s ease-in-out infinite;
+    border-radius: 1px;
+}
+
+.c1 {
+    width: 35%;
+    top: 25%;
+    left: 32%;
+    transform: rotate(25deg);
+    animation-delay: -0.3s;
+}
+
+.c2 {
+    width: 30%;
+    top: 65%;
+    left: 35%;
+    transform: rotate(-25deg);
+    animation-delay: -0.6s;
+}
+
+.c3 {
+    width: 40%;
+    top: 50%;
+    left: 30%;
+    transform: rotate(65deg);
+    animation-delay: -0.9s;
+}
+
+.c4 {
+    width: 25%;
+    top: 55%;
+    left: 55%;
+    transform: rotate(-45deg);
+    animation-delay: -1.2s;
+}
+
+.circuit-lines {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        transparent 15%,
+        rgba(0, 180, 216, 0.6) 15%,
+        rgba(0, 180, 216, 0.8) 17%,
+        transparent 17%,
+        transparent 35%,
+        rgba(0, 180, 216, 0.6) 35%,
+        rgba(0, 180, 216, 0.8) 37%,
+        transparent 37%,
+        transparent 55%,
+        rgba(0, 180, 216, 0.6) 55%,
+        rgba(0, 180, 216, 0.8) 57%,
+        transparent 57%,
+        transparent 75%,
+        rgba(0, 180, 216, 0.6) 75%,
+        rgba(0, 180, 216, 0.8) 77%,
+        transparent 77%,
+        transparent 100%
+    );
+    background-size: 400% 100%;
+    animation: circuit-flow 4s linear infinite;
+    border-radius: 4px 4px 0 0;
+}
+
+/* Data stream effects */
+.data-stream {
+    position: absolute;
+    width: 2px;
+    height: 20px;
+    background: linear-gradient(to bottom, transparent, #00f2ff, transparent);
+    animation: data-flow 2s linear infinite;
+}
+
+.stream-1 {
+    top: 20%;
+    left: 10%;
+    animation-delay: 0s;
+}
+
+.stream-2 {
+    top: 60%;
+    left: 90%;
+    animation-delay: -0.7s;
+}
+
+.stream-3 {
+    top: 40%;
+    left: 30%;
+    animation-delay: -1.4s;
+}
+
+/* Enhanced glowing effects */
+.glow-cyan {
+    box-shadow: 0 0 5px rgba(0, 242, 255, 0.4), 0 0 10px rgba(0, 242, 255, 0.3), 0 0 15px rgba(0, 242, 255, 0.2);
+}
+
+.glow-pulse {
+    animation: glow 2.5s ease-in-out infinite alternate;
+}
+
+/* Face scanner effect */
+.face-scanner {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to bottom,
+        transparent 0%,
+        rgba(0, 242, 255, 0.1) 48%,
+        rgba(0, 242, 255, 0.3) 50%,
+        rgba(0, 242, 255, 0.1) 52%,
+        transparent 100%
+    );
+    animation: scan 3s ease-in-out infinite;
+    border-radius: inherit;
+}

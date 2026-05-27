@@ -1,0 +1,9 @@
+/* Style global 
+.p-dialog .p-dialog-header {
+    padding: 0 !important;
+}
+ */
+
+ :global(.p-dialog .p-dialog-header) {
+    padding: 16px !important;
+}

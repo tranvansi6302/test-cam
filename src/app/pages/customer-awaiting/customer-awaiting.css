@@ -1,0 +1,64 @@
+/* Desktop filter row styling */
+.desktop-filter-row {
+  padding: 8px 15px;
+  background-color: white;
+  border-bottom: 1px solid #eaeaea;
+}
+
+/* Responsive styling for tablet and mobile */
+@media (max-width: 1023px) {
+  /* Create a separate row for filters on mobile and small tablets */
+  .mobile-filter-row {
+    display: flex !important; /* Only apply on screens < 1024px */
+    width: 100%;
+    padding: 8px 15px;
+    background-color: white;
+    border-bottom: 1px solid #eaeaea;
+    align-items: center;
+  }
+  
+  /* Style the filter dropdown container */
+  .filter-dropdown-container {
+    width: 30%;
+    margin-left: 0 !important;
+    margin-right: 10px;
+  }
+  
+  .filter-dropdown-container .p-dropdown {
+    width: 100%;
+  }
+  
+  /* Style the status filters */
+  .status-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px !important;
+    width: 70%;
+  }
+  
+  .status-filters > div {
+    flex: 1;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+  }
+  
+  /* Adjust main content padding */
+  .main-content {
+    padding-top: 95px !important;
+  }
+
+  /* Make buttons more compact on mobile */
+  .header-buttons {
+    gap: 4px !important;
+  }
+
+  .header-buttons button {
+    padding: 4px 8px !important;
+    font-size: 12px !important;
+  }
+
+  .header-buttons button span {
+    display: none;
+  }
+}

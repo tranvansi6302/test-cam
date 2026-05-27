@@ -1,0 +1,286 @@
+/* AI Face Webcam page styles */
+
+.ai-face-webcam-container {
+    position: relative;
+
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Ensure webcam has no border radius and stays full screen */
+.ai-face-webcam-container .relative.overflow-hidden canvas,
+.ai-face-webcam-container .relative.overflow-hidden video,
+.ai-face-webcam-container .relative.overflow-hidden > div {
+    border-radius: 0 !important;
+    max-height: 100vh !important;
+}
+
+/* Responsive padding for different screen sizes */
+@media (max-width: 767px) {
+    .ai-face-webcam-content {
+        padding: 0; /* No padding on mobile */
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1349px) {
+    .ai-face-webcam-content {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+}
+
+@media (min-width: 1350px) {
+    .ai-face-webcam-content {
+        padding-left: 50px;
+        padding-right: 50px;
+    }
+}
+
+/* ========== ENHANCED CAPTURE LOADING ANIMATIONS ========== */
+
+/* Main capture enter animation */
+@keyframes captureEnter {
+    0% {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Ripple effect for background circles */
+@keyframes ripple {
+    0% {
+        transform: scale(0.8);
+        opacity: 0.8;
+    }
+    50% {
+        opacity: 0.4;
+    }
+    100% {
+        transform: scale(1.2);
+        opacity: 0;
+    }
+}
+
+/* Spinning glow ring */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Pulse animation for inner circle */
+@keyframes pulse {
+    0% {
+        opacity: 0.3;
+        transform: scale(0.95);
+    }
+    100% {
+        opacity: 0.6;
+        transform: scale(1.05);
+    }
+}
+
+/* Bounce animation for camera icon */
+@keyframes bounce {
+    0% {
+        transform: translateY(0px) scale(1);
+    }
+    100% {
+        transform: translateY(-3px) scale(1.1);
+    }
+}
+
+/* Particle animations - Individual for each particle */
+@keyframes particle0 {
+    0%,
+    100% {
+        transform: translate(0, 0) scale(0.5);
+        opacity: 0.3;
+    }
+    50% {
+        transform: translate(5px, -5px) scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes particle1 {
+    0%,
+    100% {
+        transform: translate(0, 0) scale(0.5);
+        opacity: 0.3;
+    }
+    50% {
+        transform: translate(3px, -8px) scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes particle2 {
+    0%,
+    100% {
+        transform: translate(0, 0) scale(0.5);
+        opacity: 0.3;
+    }
+    50% {
+        transform: translate(-5px, -5px) scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes particle3 {
+    0%,
+    100% {
+        transform: translate(0, 0) scale(0.5);
+        opacity: 0.3;
+    }
+    50% {
+        transform: translate(-8px, 3px) scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes particle4 {
+    0%,
+    100% {
+        transform: translate(0, 0) scale(0.5);
+        opacity: 0.3;
+    }
+    50% {
+        transform: translate(-5px, 5px) scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes particle5 {
+    0%,
+    100% {
+        transform: translate(0, 0) scale(0.5);
+        opacity: 0.3;
+    }
+    50% {
+        transform: translate(-3px, 8px) scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes particle6 {
+    0%,
+    100% {
+        transform: translate(0, 0) scale(0.5);
+        opacity: 0.3;
+    }
+    50% {
+        transform: translate(5px, 5px) scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes particle7 {
+    0%,
+    100% {
+        transform: translate(0, 0) scale(0.5);
+        opacity: 0.3;
+    }
+    50% {
+        transform: translate(8px, -3px) scale(1);
+        opacity: 1;
+    }
+}
+
+/* Additional glow effects */
+@keyframes glow {
+    0%,
+    100% {
+        box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(16, 185, 129, 0.8), 0 0 30px rgba(16, 185, 129, 0.6);
+    }
+}
+
+/* Smooth fade in for text elements */
+@keyframes fadeInUp {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Text breathing effect */
+@keyframes breathe {
+    0%,
+    100% {
+        opacity: 0.8;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.02);
+    }
+}
+
+/* Progress complete celebration effect */
+@keyframes celebrate {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Enhance existing loading animations */
+.ai-face-webcam-container .capture-loading {
+    animation: glow 2s ease-in-out infinite;
+}
+
+.ai-face-webcam-container .capture-text {
+    animation: fadeInUp 0.5s ease-out, breathe 3s ease-in-out infinite 0.5s;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 768px) {
+    @keyframes ripple {
+        0% {
+            transform: scale(0.6);
+            opacity: 0.8;
+        }
+        50% {
+            opacity: 0.4;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 0;
+        }
+    }
+}
+
+/* Performance optimizations */
+.ai-face-webcam-container * {
+    will-change: transform, opacity;
+}
+
+/* Smooth transitions for all animated elements */
+.ai-face-webcam-container .animated-element {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
