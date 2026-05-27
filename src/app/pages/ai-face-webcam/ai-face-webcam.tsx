@@ -1280,7 +1280,7 @@ export default function AIFaceWebcam({
             )}
 
             <div
-                className={`w-full mx-auto h-screen flex flex-row items-center justify-between gap-5 overflow-hidden ai-face-webcam-content ${
+                className={`w-full mx-auto h-[100dvh] flex flex-row items-center justify-between gap-5 overflow-hidden ai-face-webcam-content ${
                     isLoading ? 'invisible' : 'visible'
                 }`}
                 style={{
@@ -1288,13 +1288,13 @@ export default function AIFaceWebcam({
                 }}
             >
                 {/* Left Panel - Photo Guide */}
-                <div className='flex-1 h-screen overflow-hidden px-4 hidden md:block'>
+                <div className='flex-1 h-[100dvh] overflow-hidden px-4 hidden md:block'>
                     <PhotoGuidePanel />
                 </div>
 
                 {/* Center - Webcam */}
                 <div
-                    className='relative overflow-hidden border-0 md:border md:border-cyan-100 shadow-none md:shadow-xl mx-auto flex flex-col h-screen md:h-auto w-full md:w-auto bg-[#080c14] md:bg-transparent'
+                    className='relative overflow-hidden border-0 md:border md:border-cyan-100 shadow-none md:shadow-xl mx-auto flex flex-col h-[100dvh] md:h-auto w-full md:w-auto bg-[#080c14] md:bg-transparent'
                     style={{ display: isStartingCapture || isProcessingCapture || isSavingData ? 'none' : 'block' }}
                     onDoubleClick={() => {
                         // Only trigger if not already capturing and face is detected
@@ -1533,12 +1533,12 @@ export default function AIFaceWebcam({
                     <div className='absolute bottom-0 left-0 w-full bg-transparent flex flex-col items-center md:hidden select-none z-20 pb-0 pointer-events-none'>
                         
                         {/* Glassmorphic Guidance Card */}
-                        <div className='w-[90%] bg-[#131b2e]/70 backdrop-blur-lg border border-white/10 rounded-2xl p-3 shadow-2xl flex flex-col items-center mb-4 pointer-events-auto'>
+                        <div className='w-[90%] bg-[#131b2e]/70 backdrop-blur-lg border border-white/10 rounded-2xl p-2.5 shadow-2xl flex flex-col items-center mb-2.5 pointer-events-auto'>
                             {/* 3 Step Cards row */}
                             <div className='grid grid-cols-3 gap-2 w-full'>
                                 {/* Step 1 */}
-                                <div className='bg-white/5 border border-white/5 rounded-xl p-2 flex flex-col items-start text-left'>
-                                    <div className='w-7 h-7 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-1.5'>
+                                <div className='bg-white/5 border border-white/5 rounded-xl p-1.5 flex flex-col items-start text-left'>
+                                    <div className='w-7 h-7 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-1'>
                                         <Eye className='w-4 h-4 text-blue-400' strokeWidth={1.5} />
                                     </div>
                                     <div className='text-blue-400 font-bold text-[10px] whitespace-nowrap'>1. Cân mắt</div>
@@ -1546,8 +1546,8 @@ export default function AIFaceWebcam({
                                 </div>
 
                                 {/* Step 2 */}
-                                <div className='bg-white/5 border border-white/5 rounded-xl p-2 flex flex-col items-start text-left'>
-                                    <div className='w-7 h-7 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mb-1.5'>
+                                <div className='bg-white/5 border border-white/5 rounded-xl p-1.5 flex flex-col items-start text-left'>
+                                    <div className='w-7 h-7 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mb-1'>
                                         <svg className='w-4 h-4 text-purple-400' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='1.5'>
                                             <path d='M9 15c0-2.5 2-4 3-6V4a2 2 0 0 1 4 0v5c1 2 3 3.5 3 6a3.5 3.5 0 0 1-7 0H12a3.5 3.5 0 0 1-7 0' strokeLinecap='round' strokeLinejoin='round' />
                                         </svg>
@@ -1557,8 +1557,8 @@ export default function AIFaceWebcam({
                                 </div>
 
                                 {/* Step 3 */}
-                                <div className='bg-white/5 border border-white/5 rounded-xl p-2 flex flex-col items-start text-left'>
-                                    <div className='w-7 h-7 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center mb-1.5'>
+                                <div className='bg-white/5 border border-white/5 rounded-xl p-1.5 flex flex-col items-start text-left'>
+                                    <div className='w-7 h-7 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center mb-1'>
                                         <Camera className='w-4 h-4 text-green-400' strokeWidth={1.5} />
                                     </div>
                                     <div className='text-green-400 font-bold text-[10px] whitespace-nowrap'>3. Tự chụp</div>
@@ -1572,34 +1572,14 @@ export default function AIFaceWebcam({
                             </div>
                         </div>
 
-                        {/* Large White Capture Button inside curved container at the absolute bottom */}
-                        <div className='relative w-full bg-[#080c14]/90 backdrop-blur-md flex flex-col items-center pt-2 pb-8 pointer-events-auto'>
-                            {/* Curved SVG border */}
-                            <svg 
-                                className='absolute top-[-20px] left-0 w-full h-[21px] pointer-events-none'
-                                viewBox='0 0 375 20'
-                                preserveAspectRatio='none'
-                                fill='none'
-                                xmlns='http://www.w3.org/2000/svg'
-                            >
-                                <path 
-                                    d='M0 10C90 10 110 20 187.5 20C265 20 285 10 375 10V20H0V10Z' 
-                                    fill='rgba(8, 12, 20, 0.9)' 
-                                />
-                                <path 
-                                    d='M0 10C90 10 110 20 187.5 20C265 20 285 10 375 10' 
-                                    stroke='rgba(255, 255, 255, 0.08)' 
-                                    strokeWidth='1' 
-                                    fill='none'
-                                />
-                            </svg>
-                            
+                        {/* Large White Capture Button floating directly above the bottom */}
+                        <div className='relative w-full flex flex-col items-center pt-2 pb-14 pointer-events-auto bg-transparent'>
                             {/* Control row with back, capture, and switch camera buttons */}
                             <div className='flex items-center justify-between w-full max-w-[300px] px-2 z-10'>
                                 {/* Left: Go Back Button */}
                                 <button
                                     onClick={() => navigate(-1)}
-                                    className='w-11 h-11 rounded-full bg-white/10 active:bg-white/20 border border-white/15 flex items-center justify-center text-white active:scale-90 transition-all shadow-md'
+                                    className='w-11 h-11 rounded-full bg-[#0a0f1d]/60 backdrop-blur-md border border-white/10 active:bg-white/20 flex items-center justify-center text-white active:scale-90 transition-all shadow-lg'
                                     title='Quay lại'
                                 >
                                     <ArrowLeft className='w-5 h-5 text-white' strokeWidth={2.5} />
@@ -1609,7 +1589,7 @@ export default function AIFaceWebcam({
                                 <button
                                     onClick={captureImage}
                                     disabled={isStartingCapture || isProcessingCapture || isSavingData}
-                                    className='relative w-18 h-18 rounded-full flex items-center justify-center active:scale-95 transition-all shadow-[0_0_25px_rgba(139,92,246,0.2),0_0_12px_rgba(255,255,255,0.1)]'
+                                    className='relative w-18 h-18 rounded-full flex items-center justify-center active:scale-95 transition-all shadow-[0_0_25px_rgba(139,92,246,0.25),0_0_12px_rgba(255,255,255,0.15)] bg-white'
                                     title='Chụp ảnh'
                                 >
                                     {/* Outer ring border */}
@@ -1621,7 +1601,7 @@ export default function AIFaceWebcam({
                                 {/* Right: Switch Camera Button */}
                                 <button
                                     onClick={toggleCamera}
-                                    className='w-11 h-11 rounded-full bg-white/10 active:bg-white/20 border border-white/15 flex items-center justify-center text-white active:scale-90 transition-all shadow-md'
+                                    className='w-11 h-11 rounded-full bg-[#0a0f1d]/60 backdrop-blur-md border border-white/10 active:bg-white/20 flex items-center justify-center text-white active:scale-90 transition-all shadow-lg'
                                     title='Đổi camera'
                                 >
                                     <RefreshCw className='w-5 h-5 text-white' strokeWidth={2.5} />
@@ -1633,7 +1613,7 @@ export default function AIFaceWebcam({
                 </div>
 
                 {/* Right Panel - Process Panel */}
-                <div className='flex-1 h-screen overflow-hidden px-4 hidden md:block'>
+                <div className='flex-1 h-[100dvh] overflow-hidden px-4 hidden md:block'>
                     <ProcessPanel activeStep={1} />
                 </div>
             </div>
