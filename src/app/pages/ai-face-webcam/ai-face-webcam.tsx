@@ -8,7 +8,7 @@ import PhotoGuidePanel from './_components/photo-guide'
 import ProcessPanel from './_components/process-panel'
 import './ai-face-webcam.css'
 import LoadingAiFace from '../../components/loading-ai-face'
-import { Camera, RefreshCw, ArrowLeft, Eye } from 'lucide-react'
+import { RefreshCw, ArrowLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 
@@ -150,32 +150,32 @@ const COLORS = {
 // Cấu hình style (kích thước, bóng đổ)
 const STYLE = {
     ACTIVE: {
-        LINE_WIDTH: 9.0, // Increased line thickness when active for retina visibility
-        SHADOW_BLUR: 10, // Increased glow
-        POINT_SIZE: 18, // Increased point size when active
-        CENTER_POINT_SIZE: 7.0 // Increased center white point size
+        LINE_WIDTH: 8.5, // Highly visible active lines (up from 5.0)
+        SHADOW_BLUR: 12, // Active glow
+        POINT_SIZE: 15.0, // Large, prominent active point size (up from 10.5)
+        CENTER_POINT_SIZE: 5.0 // Prominent center white point size (up from 3.5)
     },
     INACTIVE: {
-        LINE_WIDTH: 6.0, // Increased line thickness when inactive
+        LINE_WIDTH: 5.5, // Highly visible inactive lines (up from 3.0)
         SHADOW_BLUR: 0,
-        POINT_SIZE: 13, // Increased point size when inactive
+        POINT_SIZE: 11.5, // Large, prominent inactive point size (up from 7.5)
         LINE_DASH: [6, 6]
     },
     FACE_OUTLINE: {
-        LINE_WIDTH: 3.5, // Tăng độ dày đường viền khuôn mặt từ 1.2 lên 2
-        SHADOW_BLUR: 5 // Tăng độ phát sáng từ 3 lên 5
+        LINE_WIDTH: 3.0, // Thicker face outline
+        SHADOW_BLUR: 6
     },
     LANDMARK: {
-        POINT_SIZE: 5, // Tăng kích thước điểm landmark chính từ 1.5 lên 3 (rõ nét hơn)
-        STROKE_WIDTH: 1.5, // Tăng độ dày viền điểm landmark từ 0.5 lên 1
-        SHADOW_BLUR: 12
+        POINT_SIZE: 4.5, // Larger landmark point size
+        STROKE_WIDTH: 1.2,
+        SHADOW_BLUR: 10
     },
     GOLDEN_RATIO: {
-        LINE_WIDTH: 3.0, // Tăng độ dày đường tỉ lệ vàng từ 1.2 lên 1.8
+        LINE_WIDTH: 2.5,
         SHADOW_BLUR: 5,
-        POINT_SIZE: 5.5, // Tăng kích thước điểm từ 1.5 lên 3
-        CENTER_POINT_SIZE: 2.5, // Tăng kích thước điểm trung tâm từ 1 lên 1.5
-        LINE_DASH: [2, 4]
+        POINT_SIZE: 4.5,
+        CENTER_POINT_SIZE: 2.0,
+        LINE_DASH: [3, 4]
     }
 }
 // ========== KẾT THÚC KHAI BÁO MÀU SẮC ==========
@@ -663,26 +663,15 @@ export default function AIFaceWebcam({
         }
     }, [onCapture, facingMode])
 
-    // Process video frame
+    // Process video frame (Logic and Detection ONLY, no canvas drawing)
     const processFrame = useCallback(async () => {
-        if (!detector || !landmarker || !webcamRef.current?.video || !canvasRef.current) return
+        if (!detector || !landmarker || !webcamRef.current?.video) return
 
         const video = webcamRef.current.video
-        const canvas = canvasRef.current
-        const ctx = canvas.getContext('2d')
-        if (!video || video.readyState !== video.HAVE_ENOUGH_DATA || !ctx) return
+        if (!video || video.readyState !== video.HAVE_ENOUGH_DATA) return
 
-        // Setup canvas
-        canvas.width = video.videoWidth
-        canvas.height = video.videoHeight
-        ctx.save()
-        if (facingMode === 'user') {
-            ctx.scale(-1, 1)
-            ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height)
-        } else {
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-        }
-        ctx.restore()
+        const videoWidth = video.videoWidth
+        const videoHeight = video.videoHeight
 
         const currentTime = performance.now()
         const detections = detector.detectForVideo(video, currentTime)
@@ -691,6 +680,8 @@ export default function AIFaceWebcam({
         if (detections.detections.length === 0) {
             setFace(null)
             setCurrentLandmarks([])
+            previousDetectionsRef.current = null
+            previousLandmarksRef.current = []
             setGuidance({
                 isDetected: false,
                 tiltMessage: 'Vui lòng đưa khuôn mặt vào khung hình',
@@ -792,9 +783,9 @@ export default function AIFaceWebcam({
         previousLandmarksRef.current = landmarks
 
         // Calculate parameters
-        const idealWidth = canvas.width * (canvas.height > canvas.width ? 0.45 : 0.25)
-        const idealCenterX = canvas.width / 2
-        const idealCenterY = canvas.height * 0.45
+        const idealWidth = videoWidth * (videoHeight > videoWidth ? 0.45 : 0.25)
+        const idealCenterX = videoWidth / 2
+        const idealCenterY = videoHeight * 0.45
         const radiusX = idealWidth / 2
         const radiusY = (idealWidth * 1.3) / 2
 
@@ -802,7 +793,7 @@ export default function AIFaceWebcam({
         const flippedBoundingBox = {
             ...detectedFace.boundingBox,
             originX: facingMode === 'user'
-                ? canvas.width - (detectedFace.boundingBox.originX + detectedFace.boundingBox.width)
+                ? videoWidth - (detectedFace.boundingBox.originX + detectedFace.boundingBox.width)
                 : detectedFace.boundingBox.originX
         }
 
@@ -816,30 +807,16 @@ export default function AIFaceWebcam({
             outerRadiusX,
             outerRadiusY,
             landmarks,
-            canvas.width,
-            canvas.height,
-            facingMode === 'user' ? (x) => canvas.width - x : (x) => x
+            videoWidth,
+            videoHeight,
+            facingMode === 'user' ? (x) => videoWidth - x : (x) => x
         )
 
         // Bỏ qua việc kiểm tra nằm trong khung
         const bypassOvalCheck = false
 
         // 1. FIRST CHECK: Is the face completely within the frame?
-        // Đầu tiên, kiểm tra khuôn mặt có nằm trong khung hay không
         if (!isCompletelyWithinOuterOval && !bypassOvalCheck) {
-            FaceGuidanceOverlay({
-                ctx,
-                face: detectedFace,
-                landmarks,
-                width: canvas.width,
-                height: canvas.height,
-                isWithinGuide: false,
-                isCorrectDistance: true,
-                isAxesAligned: false,
-                optimizeRendering: false,
-                facingMode
-            })
-
             // Xác định vị trí khuôn mặt so với khung
             const faceX = detectedFace.boundingBox.originX + detectedFace.boundingBox.width / 2
             const faceY = detectedFace.boundingBox.originY + detectedFace.boundingBox.height / 2
@@ -890,8 +867,8 @@ export default function AIFaceWebcam({
         }
 
         const dimensions: ImageDimensions = {
-            width: canvas.width,
-            height: canvas.height
+            width: videoWidth,
+            height: videoHeight
         }
 
         // Check both X (eyes) and Y (nose) alignment
@@ -903,17 +880,14 @@ export default function AIFaceWebcam({
                 ? isFaceAlignedWithFixedAxes(faceAlignment, dimensions, facingMode === 'user')
                 : false
 
-        // Draw fixed axes
-        const { bothPupilsAligned, noseAligned } = drawFixedGuidanceAxes(
-            ctx,
+        // Get alignment status from checkFixedAxesAlignment helper
+        const { bothPupilsAligned, noseAligned } = checkFixedAxesAlignment(
+            landmarks,
             idealCenterX,
             idealCenterY,
-            radiusX,
             radiusY,
-            isAxesAligned,
-            landmarks,
-            true, // Always true since we've removed distance checking
-            true,
+            videoWidth,
+            videoHeight,
             facingMode === 'user'
         )
 
@@ -928,14 +902,14 @@ export default function AIFaceWebcam({
                 // Căn chỉnh trục Y (sống mũi) trước
                 if (landmarks[1]) {
                     const nose = landmarks[1]
-                    const noseX = facingMode === 'user' ? (1 - nose.x) * canvas.width : nose.x * canvas.width
+                    const noseX = facingMode === 'user' ? (1 - nose.x) * videoWidth : nose.x * videoWidth
                     const diffFromCenter = noseX - idealCenterX
 
                     // Độ lệch trái phải của mũi so với trung tâm - thêm thông tin chi tiết hơn
                     if (diffFromCenter > 10) {
-                        guidanceMessage = '← Nghiêng phải nhẹ ' + Math.round(diffFromCenter) + 'px' // Thêm thông tin độ lệch
+                        guidanceMessage = '← Nghiêng phải nhẹ ' + Math.round(diffFromCenter) + 'px'
                     } else if (diffFromCenter < -10) {
-                        guidanceMessage = '→ Nghiêng trái nhẹ ' + Math.round(Math.abs(diffFromCenter)) + 'px' // Thêm thông tin độ lệch
+                        guidanceMessage = '→ Nghiêng trái nhẹ ' + Math.round(Math.abs(diffFromCenter)) + 'px'
                     } else {
                         guidanceMessage = '↕ Giữ sống mũi thẳng, chưa đủ chính xác'
                     }
@@ -947,12 +921,12 @@ export default function AIFaceWebcam({
                 if (landmarks[133] && landmarks[362]) {
                     const leftInnerCorner = landmarks[133] // Khóe mắt trái trong
                     const rightInnerCorner = landmarks[362] // Khóe mắt phải trong
-                    const innerCornerYDiff = Math.abs(leftInnerCorner.y - rightInnerCorner.y) * canvas.height
+                    const innerCornerYDiff = Math.abs(leftInnerCorner.y - rightInnerCorner.y) * videoHeight
 
                     if (leftInnerCorner.y > rightInnerCorner.y) {
-                        guidanceMessage = '↺ Nghiêng trái nhẹ ' + Math.round(innerCornerYDiff) + 'px' // Thêm thông tin độ lệch
+                        guidanceMessage = '↺ Nghiêng trái nhẹ ' + Math.round(innerCornerYDiff) + 'px'
                     } else if (leftInnerCorner.y < rightInnerCorner.y) {
-                        guidanceMessage = '↻ Nghiêng phải nhẹ ' + Math.round(innerCornerYDiff) + 'px' // Thêm thông tin độ lệch
+                        guidanceMessage = '↻ Nghiêng phải nhẹ ' + Math.round(innerCornerYDiff) + 'px'
                     } else {
                         guidanceMessage = '✦ Giữ mắt ngang, chưa đủ chính xác'
                     }
@@ -960,25 +934,10 @@ export default function AIFaceWebcam({
                     guidanceMessage = '✦ Căn chỉnh mắt ngang 100%'
                 }
             } else if (!checkFaceCentered(landmarks)) {
-                guidanceMessage = '⊕ Vào giữa khung hình'
+                guidanceMessage = '⊕ Vào giữ khung hình'
             } else {
                 guidanceMessage = '✦ Tinh chỉnh lại khuôn mặt'
             }
-
-            FaceGuidanceOverlay({
-                ctx,
-                face: detectedFace,
-                landmarks,
-                width: canvas.width,
-                height: canvas.height,
-                isWithinGuide: true,
-                isCorrectDistance: true,
-                isAxesAligned: isHorizontalAxisActive && isVerticalAxisActive,
-                isHorizontalAxisActive: true, // Always show horizontal axis
-                isVerticalAxisActive: true, // Always show vertical axis
-                optimizeRendering: false,
-                facingMode
-            })
 
             setGuidance({
                 isDetected: true,
@@ -1001,7 +960,6 @@ export default function AIFaceWebcam({
         }
 
         // All checks pass - perfect alignment
-        // Kiểm tra xem tất cả các điểm quan trọng có được phát hiện không
         const allLandmarksDetected =
             landmarks[133] &&
             landmarks[362] && // Hai khóe mắt trong
@@ -1012,26 +970,7 @@ export default function AIFaceWebcam({
         const isHorizontalAxisActive = checkEyesAlignment(landmarks)
         const isVerticalAxisActive = checkNoseAlignment(landmarks)
 
-        // Optimize rendering by reducing drawing operations for non-critical frames
-        const needsDetailedRendering = isHorizontalAxisActive || isVerticalAxisActive || stableFramesCount > 0
-
-        FaceGuidanceOverlay({
-            ctx,
-            face: detectedFace,
-            landmarks,
-            width: canvas.width,
-            height: canvas.height,
-            isWithinGuide: true,
-            isCorrectDistance: true,
-            isAxesAligned: isHorizontalAxisActive && isVerticalAxisActive,
-            isHorizontalAxisActive: true, // Always show horizontal axis
-            isVerticalAxisActive: true, // Always show vertical axis
-            optimizeRendering: !needsDetailedRendering,
-            facingMode
-        })
-
         // Determine if the face is in a stable position
-        // Only increment stable frames when the face is already somewhat stable
         const isStable = stableFramesCount >= STABILITY_THRESHOLD
 
         // Fast track stability for perfectly aligned faces
@@ -1044,27 +983,13 @@ export default function AIFaceWebcam({
             setStableFramesCount(0)
         }
 
-        // Calculate face alignment properties
-        const alignmentResult = drawFixedGuidanceAxes(
-            ctx,
-            idealCenterX,
-            idealCenterY,
-            radiusX,
-            radiusY,
-            isAxesAligned,
-            landmarks,
-            true, // Always true since we've removed distance checking
-            true,
-            facingMode === 'user'
-        )
-
         // Use alignment results for further processing
         const facePerfectlyAligned =
             isCompletelyWithinOuterOval &&
             allLandmarksDetected &&
             isAxesAligned &&
-            alignmentResult.bothPupilsAligned &&
-            alignmentResult.noseAligned
+            bothPupilsAligned &&
+            noseAligned
 
         // Check if both X and Y axes are active
         const bothAxesActive = isHorizontalAxisActive && isVerticalAxisActive
@@ -1074,8 +999,8 @@ export default function AIFaceWebcam({
             // Skip update if most critical states are the same
             if (
                 prevGuidance.isDetected === true &&
-                prevGuidance.bothPupilsAligned === alignmentResult.bothPupilsAligned &&
-                prevGuidance.noseAligned === alignmentResult.noseAligned &&
+                prevGuidance.bothPupilsAligned === bothPupilsAligned &&
+                prevGuidance.noseAligned === noseAligned &&
                 prevGuidance.isCompletelyWithinOval === isCompletelyWithinOuterOval &&
                 prevGuidance.allCriteriaMet === facePerfectlyAligned
             ) {
@@ -1085,18 +1010,18 @@ export default function AIFaceWebcam({
             return {
                 isDetected: true,
                 tiltMessage: isCompletelyWithinOuterOval
-                    ? alignmentResult.bothPupilsAligned && alignmentResult.noseAligned
+                    ? bothPupilsAligned && noseAligned
                         ? 'Khuôn mặt đã chuẩn 100%'
                         : 'Hoàn hảo! Giữ nguyên tư thế'
                     : 'Giữ khuôn mặt nằm trong khung hình',
                 allCriteriaMet: facePerfectlyAligned,
                 isCentered: true,
-                isCorrectDistance: true, // Keep this for the guidance object structure
+                isCorrectDistance: true,
                 isAxesAligned: true,
                 isCompletelyWithinOval: isCompletelyWithinOuterOval,
                 bypassOvalCheck: bypassOvalCheck,
-                bothPupilsAligned: alignmentResult.bothPupilsAligned,
-                noseAligned: alignmentResult.noseAligned
+                bothPupilsAligned: bothPupilsAligned,
+                noseAligned: noseAligned
             }
         })
 
@@ -1113,10 +1038,9 @@ export default function AIFaceWebcam({
                 if (!captureStartTimeRef.current) return
 
                 const elapsed = timestamp - captureStartTimeRef.current
-                const duration = 500 // Reduce from 1000ms to 500ms for faster capture
+                const duration = 500 // 500ms for faster capture
                 const progress = Math.min(100, (elapsed / duration) * 100)
 
-                // Sử dụng requestAnimationFrame đồng bộ với vòng lặp trình duyệt
                 requestAnimationFrame(() => {
                     setCaptureProgress(progress)
                 })
@@ -1124,7 +1048,6 @@ export default function AIFaceWebcam({
                 if (progress < 100) {
                     captureAnimationRef.current = requestAnimationFrame(animateProgress)
                 } else {
-                    // Hoàn thành tiến trình
                     captureImage()
                     setIsCapturing(false)
                     setCaptureProgress(0)
@@ -1145,8 +1068,6 @@ export default function AIFaceWebcam({
                 progressIntervalRef.current = null
             }
         }
-
-        // Xóa phần kiểm tra vi phạm ở đây vì sẽ chuyển sang useEffect riêng
     }, [detector, landmarker, stableFramesCount, captureImage, shouldCapture, isAutoCapturing, facingMode])
 
     // Manage frame processing with improved throttling
@@ -1200,6 +1121,82 @@ export default function AIFaceWebcam({
             if (progressIntervalRef.current) clearInterval(progressIntervalRef.current)
         }
     }, [detector, landmarker, processFrame])
+
+    // Separate render loop for drawing on canvas at 60fps (ensures smooth ripples/animations)
+    useEffect(() => {
+        let animationFrameId = 0
+
+        const renderLoop = () => {
+            const canvas = canvasRef.current
+            const video = webcamRef.current?.video
+            if (canvas && video && video.readyState === video.HAVE_ENOUGH_DATA) {
+                const ctx = canvas.getContext('2d')
+                if (ctx) {
+                    // Set canvas dimensions to match video dynamically
+                    if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+                        canvas.width = video.videoWidth
+                        canvas.height = video.videoHeight
+                    }
+
+                    // 1. Clear the canvas (transparent background, overlays the webcam video beneath)
+                    ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+                    // Draw the faint 3x3 rule-of-thirds camera grid
+                    draw3x3Grid(ctx, canvas.width, canvas.height)
+
+                    // 2. Get the latest detection and landmarks cache
+                    const currentDetection = previousDetectionsRef.current
+                    const currentLandmarks = previousLandmarksRef.current
+
+                    // 3. Draw overlays
+                    if (currentDetection && currentLandmarks && currentLandmarks.length > 0) {
+                        const eyesAligned = checkEyesAlignment(currentLandmarks)
+                        const noseAligned = checkNoseAlignment(currentLandmarks)
+                        const isAxesAligned = eyesAligned && noseAligned
+
+                        FaceGuidanceOverlay({
+                            ctx,
+                            face: currentDetection,
+                            landmarks: currentLandmarks,
+                            width: canvas.width,
+                            height: canvas.height,
+                            isWithinGuide: true,
+                            isCorrectDistance: true,
+                            isAxesAligned,
+                            facingMode
+                        })
+                    } else {
+                        // If no face is detected yet, draw the default inactive axes
+                        const idealCenterX = canvas.width / 2
+                        const idealCenterY = canvas.height * 0.45
+                        const idealWidth = canvas.width * (canvas.height > canvas.width ? 0.45 : 0.25)
+                        const radiusX = idealWidth / 2
+                        const radiusY = (idealWidth * 1.3) / 2
+
+                        drawFixedGuidanceAxes(
+                            ctx,
+                            idealCenterX,
+                            idealCenterY,
+                            radiusX,
+                            radiusY,
+                            false,
+                            [],
+                            true,
+                            false,
+                            facingMode === 'user'
+                        )
+                    }
+                }
+            }
+            animationFrameId = requestAnimationFrame(renderLoop)
+        }
+
+        renderLoop()
+
+        return () => {
+            cancelAnimationFrame(animationFrameId)
+        }
+    }, [facingMode])
 
     // Thêm useEffect mới để theo dõi sự thay đổi của trạng thái căn chỉnh
     // và hủy quá trình đếm ngược nếu mất alignment trong khi đang đếm
@@ -1265,24 +1262,23 @@ export default function AIFaceWebcam({
                             {isStartingCapture && !isProcessingCapture
                                 ? 'Đang chụp hình...'
                                 : isProcessingCapture
-                                ? 'Đang xử lý khuôn mặt...'
-                                : 'Đang lưu thông tin...'}
+                                    ? 'Đang xử lý khuôn mặt...'
+                                    : 'Đang lưu thông tin...'}
                         </p>
                         <p className='text-white/70 text-center text-sm'>
                             {isStartingCapture && !isProcessingCapture
                                 ? 'Vui lòng giữ nguyên tư thế...'
                                 : isProcessingCapture
-                                ? 'Hình ảnh đang được phân tích và xử lý...'
-                                : 'Đang lưu thông tin vào hệ thống, vui lòng đợi trong giây lát...'}
+                                    ? 'Hình ảnh đang được phân tích và xử lý...'
+                                    : 'Đang lưu thông tin vào hệ thống, vui lòng đợi trong giây lát...'}
                         </p>
                     </div>
                 </div>
             )}
 
             <div
-                className={`w-full mx-auto h-[100dvh] flex flex-row items-center justify-between gap-5 overflow-hidden ai-face-webcam-content ${
-                    isLoading ? 'invisible' : 'visible'
-                }`}
+                className={`w-full mx-auto h-[100dvh] flex flex-row items-center justify-between gap-5 overflow-hidden ai-face-webcam-content ${isLoading ? 'invisible' : 'visible'
+                    }`}
                 style={{
                     display: isStartingCapture || isProcessingCapture || isSavingData ? 'none' : 'flex'
                 }}
@@ -1531,18 +1527,18 @@ export default function AIFaceWebcam({
 
                     {/* Mobile Only: Beautiful Wavy bottom dock with control buttons */}
                     <div className='absolute bottom-0 left-0 w-full bg-transparent flex flex-col items-center md:hidden select-none z-20 pb-0 pointer-events-none'>
-                        
+
                         {/* Wavy bottom background container */}
                         <div className='relative w-full bg-[#080c14] flex flex-col items-center pt-4 pb-14 pointer-events-auto'>
                             {/* Wavy SVG border at the top of the container */}
                             <div className='absolute top-0 left-0 w-full overflow-hidden leading-[0] transform translate-y-[-99%] pointer-events-none'>
-                                <svg 
+                                <svg
                                     className='relative block w-full h-[28px]'
-                                    viewBox='0 0 1200 120' 
+                                    viewBox='0 0 1200 120'
                                     preserveAspectRatio='none'
                                 >
-                                    <path 
-                                        d='M0,60 C150,100 350,20 500,60 C650,100 850,20 1000,60 C1100,80 1150,80 1200,60 L1200,120 L0,120 Z' 
+                                    <path
+                                        d='M0,60 C150,100 350,20 500,60 C650,100 850,20 1000,60 C1100,80 1150,80 1200,60 L1200,120 L0,120 Z'
                                         fill='#080c14'
                                     />
                                 </svg>
@@ -1904,7 +1900,111 @@ function checkFaceCentered(landmarks: NormalizedLandmark[]): boolean {
     return centerDeviation < 0.015
 }
 
-// === BẮT ĐẦU CHỈNH MÀU STYLE ===
+function checkFixedAxesAlignment(
+    landmarks: NormalizedLandmark[],
+    centerX: number,
+    centerY: number,
+    radiusY: number,
+    canvasWidth: number,
+    canvasHeight: number,
+    isMirrored: boolean
+): { bothPupilsAligned: boolean; noseAligned: boolean } {
+    if (landmarks.length < 474) {
+        return { bothPupilsAligned: false, noseAligned: false }
+    }
+
+    const eyeLevel = centerY - radiusY * 0.3 - 15
+
+    const leftInnerCorner = landmarks[133] // Khóe mắt trái trong
+    const rightInnerCorner = landmarks[362] // Khóe mắt phải trong
+    const noseTop = landmarks[168]
+    const noseTip = landmarks[1]
+
+    if (!leftInnerCorner || !rightInnerCorner || !noseTop || !noseTip) {
+        return { bothPupilsAligned: false, noseAligned: false }
+    }
+
+    const leftInnerCornerY = leftInnerCorner.y * canvasHeight
+    const rightInnerCornerY = rightInnerCorner.y * canvasHeight
+    const noseTopX = isMirrored ? (1 - noseTop.x) * canvasWidth : noseTop.x * canvasWidth
+    const noseTipX = isMirrored ? (1 - noseTip.x) * canvasWidth : noseTip.x * canvasWidth
+
+    const activeAlignmentTolerance = 8
+
+    const leftDeviationPrecise = Math.abs(leftInnerCornerY - eyeLevel)
+    const rightDeviationPrecise = Math.abs(rightInnerCornerY - eyeLevel)
+
+    const noseDeviation = Math.abs(noseTopX - centerX) + Math.abs(noseTipX - centerX)
+    const maxNoseDeviation = 12
+
+    const leftOnAxis = leftDeviationPrecise <= activeAlignmentTolerance
+    const rightOnAxis = rightDeviationPrecise <= activeAlignmentTolerance
+    const bothPupilsAligned = leftOnAxis && rightOnAxis
+    const noseAligned = noseDeviation <= maxNoseDeviation
+
+    return { bothPupilsAligned, noseAligned }
+}
+
+// Helper function to draw concentric radiating waves (ripples) around a point
+function drawRipple(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    baseRadius: number,
+    rgbaColorPrefix: string // e.g. "rgba(0, 255, 65" or "rgba(239, 68, 68"
+) {
+    const time = performance.now() / 1000 // Time in seconds
+    const numRipples = 3 // 3 ripples instead of 2 for a more dense spreading wave
+
+    ctx.save()
+    for (let i = 0; i < numRipples; i++) {
+        const duration = 1.8 // Slightly longer cycle for a smoother expand
+        const phase = (time + i * (duration / numRipples)) % duration
+        const progress = phase / duration // 0 to 1
+
+        // Radiates up to 2.2x base radius (down from larger scales to keep it elegant)
+        const rippleRadius = baseRadius + progress * baseRadius * 2.2
+        const opacity = 0.5 * (1 - progress) // Fade out as it expands
+
+        ctx.beginPath()
+        ctx.strokeStyle = `${rgbaColorPrefix}, ${opacity})`
+        ctx.lineWidth = 1.5 - progress * 0.5 // Wave line gets thinner as it spreads
+        ctx.arc(x, y, rippleRadius, 0, Math.PI * 2)
+        ctx.stroke()
+    }
+    ctx.restore()
+}
+
+// Helper function to draw a faint camera grid overlay (now dense 1x1 square style)
+function draw3x3Grid(ctx: CanvasRenderingContext2D, width: number, height: number) {
+    ctx.save()
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)' // Subtle semi-transparent white
+    ctx.lineWidth = 1.0 // Ultra-thin line for a highly technical, sleek graph paper look
+    ctx.setLineDash([2, 3]) // Tiny, tightly-spaced dashes for an elegant camera sensor feel
+
+    // Define uniform cell size for a perfect 1:1 aspect ratio (square 1x1 grid)
+    // 36 divisions across the width gives very fine graph paper squares (approx. 10px on mobile viewports)
+    const cellSize = width / 36
+
+    // Vertical grid lines
+    ctx.beginPath()
+    for (let x = cellSize; x < width; x += cellSize) {
+        ctx.moveTo(x, 0)
+        ctx.lineTo(x, height)
+    }
+    ctx.stroke()
+
+    // Horizontal grid lines
+    ctx.beginPath()
+    for (let y = cellSize; y < height; y += cellSize) {
+        ctx.moveTo(0, y)
+        ctx.lineTo(width, y)
+    }
+    ctx.stroke()
+
+    ctx.restore()
+}
+
 // 1. drawFixedGuidanceAxes: chỉnh màu trục X/Y và các điểm căn chỉnh
 function drawFixedGuidanceAxes(
     ctx: CanvasRenderingContext2D,
@@ -1987,6 +2087,9 @@ function drawFixedGuidanceAxes(
         const noseTipY = noseTip.y * ctx.canvas.height
 
         if (shouldActivateNose) {
+            // Draw animated radiating ripple
+            drawRipple(ctx, noseTipX, noseTipY, STYLE.ACTIVE.POINT_SIZE * 1.3, 'rgba(0, 255, 65')
+
             ctx.beginPath()
             ctx.shadowColor = COLORS.SHADOW.NOSE_AXIS
             ctx.shadowBlur = STYLE.ACTIVE.SHADOW_BLUR
@@ -1999,6 +2102,9 @@ function drawFixedGuidanceAxes(
             ctx.arc(noseTipX, noseTipY, STYLE.ACTIVE.CENTER_POINT_SIZE, 0, Math.PI * 2)
             ctx.fill()
         } else {
+            // Draw animated radiating ripple
+            drawRipple(ctx, noseTipX, noseTipY, STYLE.ACTIVE.POINT_SIZE * 1.3, 'rgba(239, 68, 68')
+
             ctx.beginPath()
             ctx.shadowBlur = STYLE.INACTIVE.SHADOW_BLUR
             ctx.fillStyle = '#ef4444' // Red color for nose point in inactive state
@@ -2042,11 +2148,11 @@ function drawFixedGuidanceAxes(
         if (shouldActivatePupils && shouldActivateNose) {
             ctx.beginPath()
             ctx.strokeStyle = '#00FF41' // Glowing green for perfect connection
-            ctx.lineWidth = 5.0
+            ctx.lineWidth = 5.5 // Prominent connection line (was 2.5, up from 4.5)
             ctx.shadowColor = 'rgba(0, 255, 65, 0.6)'
-            ctx.shadowBlur = 12
+            ctx.shadowBlur = 12 // Glowing blur (up from 8)
             ctx.lineJoin = 'round'
-            
+
             ctx.moveTo(leftInnerCornerX, leftInnerCornerY)
             ctx.lineTo(rightInnerCornerX, rightInnerCornerY)
             ctx.lineTo(noseTipX, noseTipY)
@@ -2060,6 +2166,9 @@ function drawFixedGuidanceAxes(
                 [leftInnerCornerX, leftInnerCornerY],
                 [rightInnerCornerX, rightInnerCornerY]
             ].forEach(([x, y]) => {
+                // Draw animated radiating ripple
+                drawRipple(ctx, x, y, STYLE.ACTIVE.POINT_SIZE * 1.3, 'rgba(0, 255, 65')
+
                 ctx.beginPath()
                 ctx.shadowColor = COLORS.SHADOW.EYE_AXIS
                 ctx.shadowBlur = STYLE.ACTIVE.SHADOW_BLUR
@@ -2077,6 +2186,9 @@ function drawFixedGuidanceAxes(
                 [leftInnerCornerX, leftInnerCornerY],
                 [rightInnerCornerX, rightInnerCornerY]
             ].forEach(([x, y]) => {
+                // Draw animated radiating ripple
+                drawRipple(ctx, x, y, STYLE.ACTIVE.POINT_SIZE * 1.3, 'rgba(239, 68, 68')
+
                 ctx.beginPath()
                 ctx.shadowBlur = STYLE.INACTIVE.SHADOW_BLUR
                 ctx.fillStyle = '#ef4444' // Red color for eye points in inactive state
@@ -2106,31 +2218,31 @@ function drawFixedGuidanceAxes(
     // Draw neon directions arrows for high-precision guidance
     if (landmarks.length >= 474 && isWithinGuide) {
         ctx.save()
-        ctx.lineWidth = 7.0 // Thicker arrow line width
+        ctx.lineWidth = 4.5 // Prominent arrow line width (was 3.0, up from 4.5)
         ctx.strokeStyle = '#ffffff' // White color for guidance arrows
         ctx.fillStyle = '#ffffff' // White color for guidance arrows
         ctx.shadowColor = 'rgba(255, 255, 255, 0.4)' // Soft white shadow
-        ctx.shadowBlur = 10
+        ctx.shadowBlur = 10 // Prominent shadow blur (was 8, up from 10)
 
         // 1. Nose alignment guidance arrow (if off-center Y axis)
         if (!noseAligned) {
             const noseTip = landmarks[1]
             const noseTipX = isMirrored ? (1 - noseTip.x) * ctx.canvas.width : noseTip.x * ctx.canvas.width
             const noseTipY = noseTip.y * ctx.canvas.height
-            const arrowLength = 40 // Longer arrow
-            const gapOffset = 25 // Greater distance from nose point center
-            
+            const arrowLength = 40 // Large nose arrow length (was 30, up from 40)
+            const gapOffset = 26 // Large gap from nose tip center (was 22, up from 25)
+
             if (noseTipX > centerX + 12) {
                 // Nose is too far right (screen), draw arrow pointing LEFT towards center
                 ctx.beginPath()
                 ctx.moveTo(noseTipX - gapOffset, noseTipY)
                 ctx.lineTo(noseTipX - gapOffset - arrowLength, noseTipY)
                 ctx.stroke()
-                
+
                 ctx.beginPath()
                 ctx.moveTo(noseTipX - gapOffset - arrowLength, noseTipY)
-                ctx.lineTo(noseTipX - gapOffset - arrowLength + 18, noseTipY - 12)
-                ctx.lineTo(noseTipX - gapOffset - arrowLength + 18, noseTipY + 12)
+                ctx.lineTo(noseTipX - gapOffset - arrowLength + 14, noseTipY - 9) // Large head (was 11/7, up from 14/9)
+                ctx.lineTo(noseTipX - gapOffset - arrowLength + 14, noseTipY + 9)
                 ctx.closePath()
                 ctx.fill()
             } else if (noseTipX < centerX - 12) {
@@ -2139,11 +2251,11 @@ function drawFixedGuidanceAxes(
                 ctx.moveTo(noseTipX + gapOffset, noseTipY)
                 ctx.lineTo(noseTipX + gapOffset + arrowLength, noseTipY)
                 ctx.stroke()
-                
+
                 ctx.beginPath()
                 ctx.moveTo(noseTipX + gapOffset + arrowLength, noseTipY)
-                ctx.lineTo(noseTipX + gapOffset + arrowLength - 18, noseTipY - 12)
-                ctx.lineTo(noseTipX + gapOffset + arrowLength - 18, noseTipY + 12)
+                ctx.lineTo(noseTipX + gapOffset + arrowLength - 14, noseTipY - 9) // Large head (was 11/7, up from 14/9)
+                ctx.lineTo(noseTipX + gapOffset + arrowLength - 14, noseTipY + 9)
                 ctx.closePath()
                 ctx.fill()
             }
@@ -2157,8 +2269,8 @@ function drawFixedGuidanceAxes(
             const leftInnerCornerY = leftInnerCorner.y * ctx.canvas.height
             const rightInnerCornerX = isMirrored ? (1 - rightInnerCorner.x) * ctx.canvas.width : rightInnerCorner.x * ctx.canvas.width
             const rightInnerCornerY = rightInnerCorner.y * ctx.canvas.height
-            const arrowLength = 25 // Longer arrow
-            const offset = 28 // Greater distance from eye point center
+            const arrowLength = 26 // Large eye arrow length (was 20, up from 25)
+            const offset = 28 // Large offset from eye center (was 24, up from 28)
 
             // Left eye adjustment
             if (leftInnerCornerY > eyeLevel + 8) {
@@ -2167,11 +2279,11 @@ function drawFixedGuidanceAxes(
                 ctx.moveTo(leftInnerCornerX, leftInnerCornerY + offset)
                 ctx.lineTo(leftInnerCornerX, leftInnerCornerY + offset - arrowLength)
                 ctx.stroke()
-                
+
                 ctx.beginPath()
                 ctx.moveTo(leftInnerCornerX, leftInnerCornerY + offset - arrowLength)
-                ctx.lineTo(leftInnerCornerX - 12, leftInnerCornerY + offset - arrowLength + 12)
-                ctx.lineTo(leftInnerCornerX + 12, leftInnerCornerY + offset - arrowLength + 12)
+                ctx.lineTo(leftInnerCornerX - 9, leftInnerCornerY + offset - arrowLength + 9) // Large head (was 7/7, up from 9/9)
+                ctx.lineTo(leftInnerCornerX + 9, leftInnerCornerY + offset - arrowLength + 9)
                 ctx.closePath()
                 ctx.fill()
             } else if (leftInnerCornerY < eyeLevel - 8) {
@@ -2180,11 +2292,11 @@ function drawFixedGuidanceAxes(
                 ctx.moveTo(leftInnerCornerX, leftInnerCornerY - offset)
                 ctx.lineTo(leftInnerCornerX, leftInnerCornerY - offset + arrowLength)
                 ctx.stroke()
-                
+
                 ctx.beginPath()
                 ctx.moveTo(leftInnerCornerX, leftInnerCornerY - offset + arrowLength)
-                ctx.lineTo(leftInnerCornerX - 12, leftInnerCornerY - offset + arrowLength - 12)
-                ctx.lineTo(leftInnerCornerX + 12, leftInnerCornerY - offset + arrowLength - 12)
+                ctx.lineTo(leftInnerCornerX - 9, leftInnerCornerY - offset + arrowLength - 9) // Large head (was 7/7, up from 9/9)
+                ctx.lineTo(leftInnerCornerX + 9, leftInnerCornerY - offset + arrowLength - 9)
                 ctx.closePath()
                 ctx.fill()
             }
@@ -2196,11 +2308,11 @@ function drawFixedGuidanceAxes(
                 ctx.moveTo(rightInnerCornerX, rightInnerCornerY + offset)
                 ctx.lineTo(rightInnerCornerX, rightInnerCornerY + offset - arrowLength)
                 ctx.stroke()
-                
+
                 ctx.beginPath()
                 ctx.moveTo(rightInnerCornerX, rightInnerCornerY + offset - arrowLength)
-                ctx.lineTo(rightInnerCornerX - 12, rightInnerCornerY + offset - arrowLength + 12)
-                ctx.lineTo(rightInnerCornerX + 12, rightInnerCornerY + offset - arrowLength + 12)
+                ctx.lineTo(rightInnerCornerX - 9, rightInnerCornerY + offset - arrowLength + 9) // Large head (was 7/7, up from 9/9)
+                ctx.lineTo(rightInnerCornerX + 9, rightInnerCornerY + offset - arrowLength + 9)
                 ctx.closePath()
                 ctx.fill()
             } else if (rightInnerCornerY < eyeLevel - 8) {
@@ -2209,11 +2321,11 @@ function drawFixedGuidanceAxes(
                 ctx.moveTo(rightInnerCornerX, rightInnerCornerY - offset)
                 ctx.lineTo(rightInnerCornerX, rightInnerCornerY - offset + arrowLength)
                 ctx.stroke()
-                
+
                 ctx.beginPath()
                 ctx.moveTo(rightInnerCornerX, rightInnerCornerY - offset + arrowLength)
-                ctx.lineTo(rightInnerCornerX - 12, rightInnerCornerY - offset + arrowLength - 12)
-                ctx.lineTo(rightInnerCornerX + 12, rightInnerCornerY - offset + arrowLength - 12)
+                ctx.lineTo(rightInnerCornerX - 9, rightInnerCornerY - offset + arrowLength - 9) // Large head (was 7/7, up from 9/9)
+                ctx.lineTo(rightInnerCornerX + 9, rightInnerCornerY - offset + arrowLength - 9)
                 ctx.closePath()
                 ctx.fill()
             }
