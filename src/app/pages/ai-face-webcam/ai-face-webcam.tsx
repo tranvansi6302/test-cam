@@ -150,31 +150,31 @@ const COLORS = {
 // Cấu hình style (kích thước, bóng đổ)
 const STYLE = {
     ACTIVE: {
-        LINE_WIDTH: 4.5, // Increased line thickness when active for retina visibility
+        LINE_WIDTH: 9.0, // Increased line thickness when active for retina visibility
         SHADOW_BLUR: 10, // Increased glow
-        POINT_SIZE: 11, // Increased point size when active
-        CENTER_POINT_SIZE: 4.5 // Increased center white point size
+        POINT_SIZE: 18, // Increased point size when active
+        CENTER_POINT_SIZE: 7.0 // Increased center white point size
     },
     INACTIVE: {
-        LINE_WIDTH: 3.2, // Increased line thickness when inactive
+        LINE_WIDTH: 6.0, // Increased line thickness when inactive
         SHADOW_BLUR: 0,
-        POINT_SIZE: 8, // Increased point size when inactive
+        POINT_SIZE: 13, // Increased point size when inactive
         LINE_DASH: [6, 6]
     },
     FACE_OUTLINE: {
-        LINE_WIDTH: 2, // Tăng độ dày đường viền khuôn mặt từ 1.2 lên 2
+        LINE_WIDTH: 3.5, // Tăng độ dày đường viền khuôn mặt từ 1.2 lên 2
         SHADOW_BLUR: 5 // Tăng độ phát sáng từ 3 lên 5
     },
     LANDMARK: {
-        POINT_SIZE: 3, // Tăng kích thước điểm landmark chính từ 1.5 lên 3 (rõ nét hơn)
-        STROKE_WIDTH: 1, // Tăng độ dày viền điểm landmark từ 0.5 lên 1
+        POINT_SIZE: 5, // Tăng kích thước điểm landmark chính từ 1.5 lên 3 (rõ nét hơn)
+        STROKE_WIDTH: 1.5, // Tăng độ dày viền điểm landmark từ 0.5 lên 1
         SHADOW_BLUR: 12
     },
     GOLDEN_RATIO: {
-        LINE_WIDTH: 1.8, // Tăng độ dày đường tỉ lệ vàng từ 1.2 lên 1.8
+        LINE_WIDTH: 3.0, // Tăng độ dày đường tỉ lệ vàng từ 1.2 lên 1.8
         SHADOW_BLUR: 5,
-        POINT_SIZE: 3, // Tăng kích thước điểm từ 1.5 lên 3
-        CENTER_POINT_SIZE: 1.5, // Tăng kích thước điểm trung tâm từ 1 lên 1.5
+        POINT_SIZE: 5.5, // Tăng kích thước điểm từ 1.5 lên 3
+        CENTER_POINT_SIZE: 2.5, // Tăng kích thước điểm trung tâm từ 1 lên 1.5
         LINE_DASH: [2, 4]
     }
 }
@@ -661,7 +661,7 @@ export default function AIFaceWebcam({
             setIsProcessingCapture(false)
             setIsStartingCapture(false)
         }
-    }, [onCapture])
+    }, [onCapture, facingMode])
 
     // Process video frame
     const processFrame = useCallback(async () => {
@@ -1147,7 +1147,7 @@ export default function AIFaceWebcam({
         }
 
         // Xóa phần kiểm tra vi phạm ở đây vì sẽ chuyển sang useEffect riêng
-    }, [detector, landmarker, stableFramesCount, captureImage, shouldCapture, isAutoCapturing])
+    }, [detector, landmarker, stableFramesCount, captureImage, shouldCapture, isAutoCapturing, facingMode])
 
     // Manage frame processing with improved throttling
     useEffect(() => {
@@ -1529,51 +1529,25 @@ export default function AIFaceWebcam({
                         </div>
                     )}
 
-                    {/* Mobile Only: Beautiful Guidance & control buttons absolute positioned at the bottom */}
+                    {/* Mobile Only: Beautiful Wavy bottom dock with control buttons */}
                     <div className='absolute bottom-0 left-0 w-full bg-transparent flex flex-col items-center md:hidden select-none z-20 pb-0 pointer-events-none'>
                         
-                        {/* Glassmorphic Guidance Card */}
-                        <div className='w-[90%] bg-[#131b2e]/70 backdrop-blur-lg border border-white/10 rounded-2xl p-2.5 shadow-2xl flex flex-col items-center mb-2.5 pointer-events-auto'>
-                            {/* 3 Step Cards row */}
-                            <div className='grid grid-cols-3 gap-2 w-full'>
-                                {/* Step 1 */}
-                                <div className='bg-white/5 border border-white/5 rounded-xl p-1.5 flex flex-col items-start text-left'>
-                                    <div className='w-7 h-7 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-1'>
-                                        <Eye className='w-4 h-4 text-blue-400' strokeWidth={1.5} />
-                                    </div>
-                                    <div className='text-blue-400 font-bold text-[10px] whitespace-nowrap'>1. Cân mắt</div>
-                                    <div className='text-[8px] text-slate-400 leading-tight mt-0.5'>Khớp mắt ngang trục X</div>
-                                </div>
-
-                                {/* Step 2 */}
-                                <div className='bg-white/5 border border-white/5 rounded-xl p-1.5 flex flex-col items-start text-left'>
-                                    <div className='w-7 h-7 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mb-1'>
-                                        <svg className='w-4 h-4 text-purple-400' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='1.5'>
-                                            <path d='M9 15c0-2.5 2-4 3-6V4a2 2 0 0 1 4 0v5c1 2 3 3.5 3 6a3.5 3.5 0 0 1-7 0H12a3.5 3.5 0 0 1-7 0' strokeLinecap='round' strokeLinejoin='round' />
-                                        </svg>
-                                    </div>
-                                    <div className='text-purple-400 font-bold text-[10px] whitespace-nowrap'>2. Cân mũi</div>
-                                    <div className='text-[8px] text-slate-400 leading-tight mt-0.5'>Đặt sống mũi dọc trục Y</div>
-                                </div>
-
-                                {/* Step 3 */}
-                                <div className='bg-white/5 border border-white/5 rounded-xl p-1.5 flex flex-col items-start text-left'>
-                                    <div className='w-7 h-7 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center mb-1'>
-                                        <Camera className='w-4 h-4 text-green-400' strokeWidth={1.5} />
-                                    </div>
-                                    <div className='text-green-400 font-bold text-[10px] whitespace-nowrap'>3. Tự chụp</div>
-                                    <div className='text-[8px] text-slate-400 leading-tight mt-0.5'>Giữ im 0.5s tự chụp</div>
-                                </div>
+                        {/* Wavy bottom background container */}
+                        <div className='relative w-full bg-[#080c14] flex flex-col items-center pt-4 pb-14 pointer-events-auto'>
+                            {/* Wavy SVG border at the top of the container */}
+                            <div className='absolute top-0 left-0 w-full overflow-hidden leading-[0] transform translate-y-[-99%] pointer-events-none'>
+                                <svg 
+                                    className='relative block w-full h-[28px]'
+                                    viewBox='0 0 1200 120' 
+                                    preserveAspectRatio='none'
+                                >
+                                    <path 
+                                        d='M0,60 C150,100 350,20 500,60 C650,100 850,20 1000,60 C1100,80 1150,80 1200,60 L1200,120 L0,120 Z' 
+                                        fill='#080c14'
+                                    />
+                                </svg>
                             </div>
 
-                            {/* Tip text */}
-                            <div className='text-center text-[10px] text-slate-400 mt-2 font-medium'>
-                                * Đứng cách camera khoảng 50cm, giữ thẳng đầu.
-                            </div>
-                        </div>
-
-                        {/* Large White Capture Button floating directly above the bottom */}
-                        <div className='relative w-full flex flex-col items-center pt-2 pb-14 pointer-events-auto bg-transparent'>
                             {/* Control row with back, capture, and switch camera buttons */}
                             <div className='flex items-center justify-between w-full max-w-[300px] px-2 z-10'>
                                 {/* Left: Go Back Button */}
@@ -2027,7 +2001,7 @@ function drawFixedGuidanceAxes(
         } else {
             ctx.beginPath()
             ctx.shadowBlur = STYLE.INACTIVE.SHADOW_BLUR
-            ctx.fillStyle = '#ffffff' // Solid white for nose point in inactive state
+            ctx.fillStyle = '#ef4444' // Red color for nose point in inactive state
             ctx.arc(noseTipX, noseTipY, STYLE.INACTIVE.POINT_SIZE, 0, Math.PI * 2)
             ctx.fill()
         }
@@ -2056,10 +2030,30 @@ function drawFixedGuidanceAxes(
     if (landmarks.length >= 474 && isWithinGuide) {
         const leftInnerCorner = landmarks[133] // Khóe mắt trái trong
         const rightInnerCorner = landmarks[362] // Khóe mắt phải trong
+        const noseTip = landmarks[1]
         const leftInnerCornerX = isMirrored ? (1 - leftInnerCorner.x) * ctx.canvas.width : leftInnerCorner.x * ctx.canvas.width
         const leftInnerCornerY = leftInnerCorner.y * ctx.canvas.height
         const rightInnerCornerX = isMirrored ? (1 - rightInnerCorner.x) * ctx.canvas.width : rightInnerCorner.x * ctx.canvas.width
         const rightInnerCornerY = rightInnerCorner.y * ctx.canvas.height
+        const noseTipX = isMirrored ? (1 - noseTip.x) * ctx.canvas.width : noseTip.x * ctx.canvas.width
+        const noseTipY = noseTip.y * ctx.canvas.height
+
+        // Draw connecting lines between the 3 points when all are active (aligned)
+        if (shouldActivatePupils && shouldActivateNose) {
+            ctx.beginPath()
+            ctx.strokeStyle = '#00FF41' // Glowing green for perfect connection
+            ctx.lineWidth = 5.0
+            ctx.shadowColor = 'rgba(0, 255, 65, 0.6)'
+            ctx.shadowBlur = 12
+            ctx.lineJoin = 'round'
+            
+            ctx.moveTo(leftInnerCornerX, leftInnerCornerY)
+            ctx.lineTo(rightInnerCornerX, rightInnerCornerY)
+            ctx.lineTo(noseTipX, noseTipY)
+            ctx.closePath()
+            ctx.stroke()
+            ctx.shadowBlur = 0 // Reset shadow
+        }
 
         if (shouldActivatePupils) {
             ;[
@@ -2085,7 +2079,7 @@ function drawFixedGuidanceAxes(
             ].forEach(([x, y]) => {
                 ctx.beginPath()
                 ctx.shadowBlur = STYLE.INACTIVE.SHADOW_BLUR
-                ctx.fillStyle = '#facc15' // Solid yellow for eye points in inactive state
+                ctx.fillStyle = '#ef4444' // Red color for eye points in inactive state
                 ctx.arc(x, y, STYLE.INACTIVE.POINT_SIZE, 0, Math.PI * 2)
                 ctx.fill()
             })
@@ -2112,10 +2106,10 @@ function drawFixedGuidanceAxes(
     // Draw neon directions arrows for high-precision guidance
     if (landmarks.length >= 474 && isWithinGuide) {
         ctx.save()
-        ctx.lineWidth = 4.0 // Thicker arrow line width
-        ctx.strokeStyle = 'rgba(251, 191, 36, 0.95)' // Vibrant Neon Amber
-        ctx.fillStyle = 'rgba(251, 191, 36, 0.95)'
-        ctx.shadowColor = 'rgba(251, 191, 36, 0.7)'
+        ctx.lineWidth = 7.0 // Thicker arrow line width
+        ctx.strokeStyle = '#ffffff' // White color for guidance arrows
+        ctx.fillStyle = '#ffffff' // White color for guidance arrows
+        ctx.shadowColor = 'rgba(255, 255, 255, 0.4)' // Soft white shadow
         ctx.shadowBlur = 10
 
         // 1. Nose alignment guidance arrow (if off-center Y axis)
@@ -2135,8 +2129,8 @@ function drawFixedGuidanceAxes(
                 
                 ctx.beginPath()
                 ctx.moveTo(noseTipX - gapOffset - arrowLength, noseTipY)
-                ctx.lineTo(noseTipX - gapOffset - arrowLength + 12, noseTipY - 8)
-                ctx.lineTo(noseTipX - gapOffset - arrowLength + 12, noseTipY + 8)
+                ctx.lineTo(noseTipX - gapOffset - arrowLength + 18, noseTipY - 12)
+                ctx.lineTo(noseTipX - gapOffset - arrowLength + 18, noseTipY + 12)
                 ctx.closePath()
                 ctx.fill()
             } else if (noseTipX < centerX - 12) {
@@ -2148,8 +2142,8 @@ function drawFixedGuidanceAxes(
                 
                 ctx.beginPath()
                 ctx.moveTo(noseTipX + gapOffset + arrowLength, noseTipY)
-                ctx.lineTo(noseTipX + gapOffset + arrowLength - 12, noseTipY - 8)
-                ctx.lineTo(noseTipX + gapOffset + arrowLength - 12, noseTipY + 8)
+                ctx.lineTo(noseTipX + gapOffset + arrowLength - 18, noseTipY - 12)
+                ctx.lineTo(noseTipX + gapOffset + arrowLength - 18, noseTipY + 12)
                 ctx.closePath()
                 ctx.fill()
             }
@@ -2176,8 +2170,8 @@ function drawFixedGuidanceAxes(
                 
                 ctx.beginPath()
                 ctx.moveTo(leftInnerCornerX, leftInnerCornerY + offset - arrowLength)
-                ctx.lineTo(leftInnerCornerX - 8, leftInnerCornerY + offset - arrowLength + 8)
-                ctx.lineTo(leftInnerCornerX + 8, leftInnerCornerY + offset - arrowLength + 8)
+                ctx.lineTo(leftInnerCornerX - 12, leftInnerCornerY + offset - arrowLength + 12)
+                ctx.lineTo(leftInnerCornerX + 12, leftInnerCornerY + offset - arrowLength + 12)
                 ctx.closePath()
                 ctx.fill()
             } else if (leftInnerCornerY < eyeLevel - 8) {
@@ -2189,8 +2183,8 @@ function drawFixedGuidanceAxes(
                 
                 ctx.beginPath()
                 ctx.moveTo(leftInnerCornerX, leftInnerCornerY - offset + arrowLength)
-                ctx.lineTo(leftInnerCornerX - 8, leftInnerCornerY - offset + arrowLength - 8)
-                ctx.lineTo(leftInnerCornerX + 8, leftInnerCornerY - offset + arrowLength - 8)
+                ctx.lineTo(leftInnerCornerX - 12, leftInnerCornerY - offset + arrowLength - 12)
+                ctx.lineTo(leftInnerCornerX + 12, leftInnerCornerY - offset + arrowLength - 12)
                 ctx.closePath()
                 ctx.fill()
             }
@@ -2205,8 +2199,8 @@ function drawFixedGuidanceAxes(
                 
                 ctx.beginPath()
                 ctx.moveTo(rightInnerCornerX, rightInnerCornerY + offset - arrowLength)
-                ctx.lineTo(rightInnerCornerX - 8, rightInnerCornerY + offset - arrowLength + 8)
-                ctx.lineTo(rightInnerCornerX + 8, rightInnerCornerY + offset - arrowLength + 8)
+                ctx.lineTo(rightInnerCornerX - 12, rightInnerCornerY + offset - arrowLength + 12)
+                ctx.lineTo(rightInnerCornerX + 12, rightInnerCornerY + offset - arrowLength + 12)
                 ctx.closePath()
                 ctx.fill()
             } else if (rightInnerCornerY < eyeLevel - 8) {
@@ -2218,8 +2212,8 @@ function drawFixedGuidanceAxes(
                 
                 ctx.beginPath()
                 ctx.moveTo(rightInnerCornerX, rightInnerCornerY - offset + arrowLength)
-                ctx.lineTo(rightInnerCornerX - 8, rightInnerCornerY - offset + arrowLength - 8)
-                ctx.lineTo(rightInnerCornerX + 8, rightInnerCornerY - offset + arrowLength - 8)
+                ctx.lineTo(rightInnerCornerX - 12, rightInnerCornerY - offset + arrowLength - 12)
+                ctx.lineTo(rightInnerCornerX + 12, rightInnerCornerY - offset + arrowLength - 12)
                 ctx.closePath()
                 ctx.fill()
             }
