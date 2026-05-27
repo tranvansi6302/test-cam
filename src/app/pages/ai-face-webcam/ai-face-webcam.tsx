@@ -146,16 +146,16 @@ const COLORS = {
 // Cấu hình style (kích thước, bóng đổ)
 const STYLE = {
     ACTIVE: {
-        LINE_WIDTH: 2.5, // Tăng độ dày đường kẻ khi active từ 1.5 lên 2.5
-        SHADOW_BLUR: 8, // Tăng độ phát sáng
-        POINT_SIZE: 6, // Tăng kích thước điểm khi active từ 4 lên 6
-        CENTER_POINT_SIZE: 2 // Tăng kích thước điểm trung tâm từ 1.5 lên 2
+        LINE_WIDTH: 4.5, // Increased line thickness when active for retina visibility
+        SHADOW_BLUR: 10, // Increased glow
+        POINT_SIZE: 11, // Increased point size when active
+        CENTER_POINT_SIZE: 4.5 // Increased center white point size
     },
     INACTIVE: {
-        LINE_WIDTH: 1.8, // Tăng độ dày đường kẻ khi không active từ 1 lên 1.8
+        LINE_WIDTH: 3.2, // Increased line thickness when inactive
         SHADOW_BLUR: 0,
-        POINT_SIZE: 4, // Tăng kích thước điểm khi không active từ 2 lên 4
-        LINE_DASH: [4, 4]
+        POINT_SIZE: 8, // Increased point size when inactive
+        LINE_DASH: [6, 6]
     },
     FACE_OUTLINE: {
         LINE_WIDTH: 2, // Tăng độ dày đường viền khuôn mặt từ 1.2 lên 2
@@ -1996,43 +1996,44 @@ function drawFixedGuidanceAxes(
     // Draw neon directions arrows for high-precision guidance
     if (landmarks.length >= 474 && isWithinGuide) {
         ctx.save()
-        ctx.lineWidth = 2.5
-        ctx.strokeStyle = 'rgba(251, 191, 36, 0.85)' // Vibrant Neon Amber
-        ctx.fillStyle = 'rgba(251, 191, 36, 0.85)'
-        ctx.shadowColor = 'rgba(251, 191, 36, 0.6)'
-        ctx.shadowBlur = 6
+        ctx.lineWidth = 4.0 // Thicker arrow line width
+        ctx.strokeStyle = 'rgba(251, 191, 36, 0.95)' // Vibrant Neon Amber
+        ctx.fillStyle = 'rgba(251, 191, 36, 0.95)'
+        ctx.shadowColor = 'rgba(251, 191, 36, 0.7)'
+        ctx.shadowBlur = 10
 
         // 1. Nose alignment guidance arrow (if off-center Y axis)
         if (!noseAligned) {
             const noseTip = landmarks[1]
             const noseTipX = (1 - noseTip.x) * ctx.canvas.width
             const noseTipY = noseTip.y * ctx.canvas.height
-            const arrowLength = 25
+            const arrowLength = 40 // Longer arrow
+            const gapOffset = 25 // Greater distance from nose point center
             
             if (noseTipX > centerX + 12) {
                 // Nose is too far right (screen), draw arrow pointing LEFT towards center
                 ctx.beginPath()
-                ctx.moveTo(noseTipX - 15, noseTipY)
-                ctx.lineTo(noseTipX - 15 - arrowLength, noseTipY)
+                ctx.moveTo(noseTipX - gapOffset, noseTipY)
+                ctx.lineTo(noseTipX - gapOffset - arrowLength, noseTipY)
                 ctx.stroke()
                 
                 ctx.beginPath()
-                ctx.moveTo(noseTipX - 15 - arrowLength, noseTipY)
-                ctx.lineTo(noseTipX - 15 - arrowLength + 6, noseTipY - 5)
-                ctx.lineTo(noseTipX - 15 - arrowLength + 6, noseTipY + 5)
+                ctx.moveTo(noseTipX - gapOffset - arrowLength, noseTipY)
+                ctx.lineTo(noseTipX - gapOffset - arrowLength + 12, noseTipY - 8)
+                ctx.lineTo(noseTipX - gapOffset - arrowLength + 12, noseTipY + 8)
                 ctx.closePath()
                 ctx.fill()
             } else if (noseTipX < centerX - 12) {
                 // Nose is too far left (screen), draw arrow pointing RIGHT towards center
                 ctx.beginPath()
-                ctx.moveTo(noseTipX + 15, noseTipY)
-                ctx.lineTo(noseTipX + 15 + arrowLength, noseTipY)
+                ctx.moveTo(noseTipX + gapOffset, noseTipY)
+                ctx.lineTo(noseTipX + gapOffset + arrowLength, noseTipY)
                 ctx.stroke()
                 
                 ctx.beginPath()
-                ctx.moveTo(noseTipX + 15 + arrowLength, noseTipY)
-                ctx.lineTo(noseTipX + 15 + arrowLength - 6, noseTipY - 5)
-                ctx.lineTo(noseTipX + 15 + arrowLength - 6, noseTipY + 5)
+                ctx.moveTo(noseTipX + gapOffset + arrowLength, noseTipY)
+                ctx.lineTo(noseTipX + gapOffset + arrowLength - 12, noseTipY - 8)
+                ctx.lineTo(noseTipX + gapOffset + arrowLength - 12, noseTipY + 8)
                 ctx.closePath()
                 ctx.fill()
             }
@@ -2046,8 +2047,8 @@ function drawFixedGuidanceAxes(
             const leftInnerCornerY = leftInnerCorner.y * ctx.canvas.height
             const rightInnerCornerX = (1 - rightInnerCorner.x) * ctx.canvas.width
             const rightInnerCornerY = rightInnerCorner.y * ctx.canvas.height
-            const arrowLength = 15
-            const offset = 18
+            const arrowLength = 25 // Longer arrow
+            const offset = 28 // Greater distance from eye point center
 
             // Left eye adjustment
             if (leftInnerCornerY > eyeLevel + 8) {
@@ -2059,8 +2060,8 @@ function drawFixedGuidanceAxes(
                 
                 ctx.beginPath()
                 ctx.moveTo(leftInnerCornerX, leftInnerCornerY + offset - arrowLength)
-                ctx.lineTo(leftInnerCornerX - 4, leftInnerCornerY + offset - arrowLength + 4)
-                ctx.lineTo(leftInnerCornerX + 4, leftInnerCornerY + offset - arrowLength + 4)
+                ctx.lineTo(leftInnerCornerX - 8, leftInnerCornerY + offset - arrowLength + 8)
+                ctx.lineTo(leftInnerCornerX + 8, leftInnerCornerY + offset - arrowLength + 8)
                 ctx.closePath()
                 ctx.fill()
             } else if (leftInnerCornerY < eyeLevel - 8) {
@@ -2072,8 +2073,8 @@ function drawFixedGuidanceAxes(
                 
                 ctx.beginPath()
                 ctx.moveTo(leftInnerCornerX, leftInnerCornerY - offset + arrowLength)
-                ctx.lineTo(leftInnerCornerX - 4, leftInnerCornerY - offset + arrowLength - 4)
-                ctx.lineTo(leftInnerCornerX + 4, leftInnerCornerY - offset + arrowLength - 4)
+                ctx.lineTo(leftInnerCornerX - 8, leftInnerCornerY - offset + arrowLength - 8)
+                ctx.lineTo(leftInnerCornerX + 8, leftInnerCornerY - offset + arrowLength - 8)
                 ctx.closePath()
                 ctx.fill()
             }
@@ -2088,8 +2089,8 @@ function drawFixedGuidanceAxes(
                 
                 ctx.beginPath()
                 ctx.moveTo(rightInnerCornerX, rightInnerCornerY + offset - arrowLength)
-                ctx.lineTo(rightInnerCornerX - 4, rightInnerCornerY + offset - arrowLength + 4)
-                ctx.lineTo(rightInnerCornerX + 4, rightInnerCornerY + offset - arrowLength + 4)
+                ctx.lineTo(rightInnerCornerX - 8, rightInnerCornerY + offset - arrowLength + 8)
+                ctx.lineTo(rightInnerCornerX + 8, rightInnerCornerY + offset - arrowLength + 8)
                 ctx.closePath()
                 ctx.fill()
             } else if (rightInnerCornerY < eyeLevel - 8) {
@@ -2101,8 +2102,8 @@ function drawFixedGuidanceAxes(
                 
                 ctx.beginPath()
                 ctx.moveTo(rightInnerCornerX, rightInnerCornerY - offset + arrowLength)
-                ctx.lineTo(rightInnerCornerX - 4, rightInnerCornerY - offset + arrowLength - 4)
-                ctx.lineTo(rightInnerCornerX + 4, rightInnerCornerY - offset + arrowLength - 4)
+                ctx.lineTo(rightInnerCornerX - 8, rightInnerCornerY - offset + arrowLength - 8)
+                ctx.lineTo(rightInnerCornerX + 8, rightInnerCornerY - offset + arrowLength - 8)
                 ctx.closePath()
                 ctx.fill()
             }
