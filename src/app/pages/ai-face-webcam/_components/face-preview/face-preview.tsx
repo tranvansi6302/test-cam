@@ -48,25 +48,21 @@ export default function FacePreview({
             browserNetwork: browserNetwork.effectiveType || ''
         }
 
-        console.log('Tạm comment lưu ảnh để test giao diện loading. Dữ liệu chuẩn:', finalData)
-        if (false as boolean) {
-            console.log(navigate, saveFaceAIMutation)
-        }
-        // saveFaceAIMutation.mutate(finalData, {
-        //     onSuccess: () => {
-        //         setIsSaving(false)
-        //         // Notify parent that saving is complete and successful
-        //         if (onSaveStateChange) onSaveStateChange(false, true)
-        //         toast.success('Lưu thông tin thành công')
-        //         navigate('/')
-        //     },
-        //     onError: () => {
-        //         setIsSaving(false)
-        //         // Notify parent that saving failed
-        //         if (onSaveStateChange) onSaveStateChange(false, false)
-        //         toast.error('Đã có lỗi xảy ra khi lưu thông tin')
-        //     }
-        // })
+        saveFaceAIMutation.mutate(finalData, {
+            onSuccess: () => {
+                setIsSaving(false)
+                // Notify parent that saving is complete and successful
+                if (onSaveStateChange) onSaveStateChange(false, true)
+                toast.success('Lưu thông tin thành công')
+                navigate('/')
+            },
+            onError: () => {
+                setIsSaving(false)
+                // Notify parent that saving failed
+                if (onSaveStateChange) onSaveStateChange(false, false)
+                toast.error('Đã có lỗi xảy ra khi lưu thông tin')
+            }
+        })
     }
 
     // When imgBase64 is set and autoProcess is true, save immediately
