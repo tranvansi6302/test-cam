@@ -8,33 +8,10 @@ import PhotoGuidePanel from './_components/photo-guide'
 import ProcessPanel from './_components/process-panel'
 import './ai-face-webcam.css'
 import LoadingAiFace from '../../components/loading-ai-face'
-import { Camera, RefreshCw, ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Check, Eye } from 'lucide-react'
+import { Camera, RefreshCw, ArrowLeft, Eye } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
-// Dynamic status arrow icon helper
-function getStatusIcon(guidance: LocalFaceGuidance) {
-    const msg = (guidance.tiltMessage || '').toLowerCase()
-    const isSuccess = guidance.allCriteriaMet || (guidance.bothPupilsAligned && guidance.noseAligned)
-    
-    if (isSuccess) {
-        return <Check className='w-5.5 h-5.5 text-green-400 animate-bounce' strokeWidth={3} />
-    }
-    
-    if (msg.includes('trái') || msg.includes('←') || msg.includes('left')) {
-        return <ArrowRight className='w-5.5 h-5.5 text-[#facc15] animate-pulse' strokeWidth={3.5} />
-    }
-    if (msg.includes('phải') || msg.includes('→') || msg.includes('right')) {
-        return <ArrowLeft className='w-5.5 h-5.5 text-[#facc15] animate-pulse' strokeWidth={3.5} />
-    }
-    if (msg.includes('lên') || msg.includes('↑') || msg.includes('up')) {
-        return <ArrowDown className='w-5.5 h-5.5 text-[#facc15] animate-pulse' strokeWidth={3.5} />
-    }
-    if (msg.includes('xuống') || msg.includes('↓') || msg.includes('down')) {
-        return <ArrowUp className='w-5.5 h-5.5 text-[#facc15] animate-pulse' strokeWidth={3.5} />
-    }
-    
-    return null
-}
+
 
 // ========== KHAI BÁO MÀU SẮC ==========
 // Màu chính cho các thành phần
@@ -1556,23 +1533,9 @@ export default function AIFaceWebcam({
                     <div className='flex-1 w-full bg-transparent flex flex-col justify-between items-center md:hidden select-none -mt-20 z-20 pb-0'>
                         
                         {/* Glassmorphic Guidance Card exactly like the image */}
-                        <div className='w-[92%] bg-[#131b2e]/65 backdrop-blur-lg border border-white/10 rounded-3xl p-5 shadow-2xl flex flex-col items-center mt-2'>
-                            <div className='text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-2'>Trạng thái cần chỉnh</div>
-                            
-                            {/* Live status with dynamic icon */}
-                            <div className='flex items-center justify-center gap-2 mb-4 h-8'>
-                                {getStatusIcon(guidance)}
-                                <div className={`text-[17px] font-extrabold transition-all ${
-                                    guidance.allCriteriaMet || (guidance.bothPupilsAligned && guidance.noseAligned)
-                                        ? 'text-green-400 drop-shadow-[0_0_8px_rgba(74,222,128,0.5)]'
-                                        : 'text-[#facc15] drop-shadow-[0_0_8px_rgba(250,204,21,0.3)]'
-                                }`}>
-                                    {guidance.tiltMessage ? guidance.tiltMessage.replace(/^[←→↺↻✓]\s*/, '') : 'Đang nhận diện khuôn mặt...'}
-                                </div>
-                            </div>
-
+                        <div className='w-[92%] bg-[#131b2e]/65 backdrop-blur-lg border border-white/10 rounded-3xl p-4 shadow-2xl flex flex-col items-center mt-2'>
                             {/* 3 Step Cards row */}
-                            <div className='grid grid-cols-3 gap-2.5 w-full mt-1'>
+                            <div className='grid grid-cols-3 gap-2 w-full'>
                                 {/* Step 1 */}
                                 <div className='bg-white/5 border border-white/5 rounded-2xl p-3 flex flex-col items-start text-left'>
                                     <div className='w-8 h-8 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-2'>
@@ -1611,7 +1574,7 @@ export default function AIFaceWebcam({
                         </div>
 
                         {/* Large White Capture Button inside curved container at the absolute bottom */}
-                        <div className='relative w-full bg-[#080c14] flex flex-col items-center pt-2 pb-6 mt-auto'>
+                        <div className='relative w-full bg-[#080c14] flex flex-col items-center pt-2 pb-12 mt-auto'>
                             {/* Curved SVG border */}
                             <svg 
                                 className='absolute top-[-24px] left-0 w-full h-[25px] pointer-events-none'
