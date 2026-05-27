@@ -1284,24 +1284,14 @@ export default function AIFaceWebcam({
                         }
                     }}
                 >
-                    <div
-                        className='relative mx-auto flex justify-center items-center'
-                        style={{
-                            height: '100vh',
-                            width: 'calc(100vh * 3 / 4)',
-                            overflow: 'hidden'
-                        }}
-                    >
+                    <div className='webcam-wrapper'>
                         <Webcam
                             ref={webcamRef}
                             screenshotFormat='image/jpeg'
                             videoConstraints={videoConstraints}
-                            className='absolute inset-0 object-cover'
+                            className='webcam-view'
                             style={{
-                                height: '100vh',
-                                width: 'calc(100vh * 3 / 4)',
-                                transform: 'scaleX(-1)',
-                                objectFit: 'cover'
+                                transform: 'scaleX(-1)'
                             }}
                             screenshotQuality={1}
                             forceScreenshotSourceSize={true}
@@ -1309,12 +1299,7 @@ export default function AIFaceWebcam({
                         />
                         <canvas
                             ref={canvasRef}
-                            className='absolute inset-0'
-                            style={{
-                                height: '100vh',
-                                width: 'calc(100vh * 3 / 4)',
-                                objectFit: 'cover'
-                            }}
+                            className='webcam-view'
                         />
                     </div>
 
