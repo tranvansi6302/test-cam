@@ -268,6 +268,7 @@ export default function AIFaceWebcam({
     const previousDetectionsRef = useRef<DetectionWithBoundingBox | null>(null)
     const previousLandmarksRef = useRef<NormalizedLandmark[]>([])
     const emaLandmarksRef = useRef<Record<number, { x: number; y: number }>>({})
+    const isProcessingFrameRef = useRef<boolean>(false) // Async lock to prevent parallel MediaPipe frames piling up
     const skipFrameCount = useRef<number>(0)
     const [previewImageSrc, setPreviewImageSrc] = useState('')
     const [isProcessingCapture, setIsProcessingCapture] = useState(false)
@@ -276,7 +277,7 @@ export default function AIFaceWebcam({
 
     // Constants
     const STABILITY_THRESHOLD = 3 // Increase from 1 to 3 frames for more stable capture
-    const UPDATE_INTERVAL = 20 // Ultra-low interval (50fps) by default for lag-free, instantaneous tracking
+    const UPDATE_INTERVAL = 33 // 33ms (~30fps) by default for power-efficient and silky-smooth mobile tracking
 
     const videoConstraints = useMemo(
         () => ({
@@ -665,7 +666,10 @@ export default function AIFaceWebcam({
 
     // Process video frame (Logic and Detection ONLY, no canvas drawing)
     const processFrame = useCallback(async () => {
-        if (!detector || !landmarker || !webcamRef.current?.video) return
+        if (isProcessingFrameRef.current) return
+        isProcessingFrameRef.current = true
+        try {
+            if (!detector || !landmarker || !webcamRef.current?.video) return
 
         const video = webcamRef.current.video
         if (!video || video.readyState !== video.HAVE_ENOUGH_DATA) return
@@ -1068,7 +1072,10 @@ export default function AIFaceWebcam({
                 progressIntervalRef.current = null
             }
         }
-    }, [detector, landmarker, stableFramesCount, captureImage, shouldCapture, isAutoCapturing, facingMode])
+    } finally {
+        isProcessingFrameRef.current = false
+    }
+}, [detector, landmarker, stableFramesCount, captureImage, shouldCapture, isAutoCapturing, facingMode])
 
     // Manage frame processing with improved throttling
     useEffect(() => {
