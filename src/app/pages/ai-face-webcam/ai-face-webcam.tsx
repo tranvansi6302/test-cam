@@ -276,7 +276,7 @@ export default function AIFaceWebcam({
 
     // Constants
     const STABILITY_THRESHOLD = 3 // Increase from 1 to 3 frames for more stable capture
-    const UPDATE_INTERVAL = 120 // Slightly faster updates for more responsive feedback
+    const UPDATE_INTERVAL = 20 // Ultra-low interval (50fps) by default for lag-free, instantaneous tracking
 
     const videoConstraints = useMemo(
         () => ({
@@ -714,7 +714,7 @@ export default function AIFaceWebcam({
 
         // Apply EMA smoothing to critical points to prevent shaking
         if (landmarks.length >= 478) {
-            const alpha = 0.35
+            const alpha = 0.70 // High alpha for instantaneous tracking with subtle micro-jitter filter
             const ema = emaLandmarksRef.current
             const keyPoints = [1, 168, 133, 362]
             keyPoints.forEach((idx) => {
