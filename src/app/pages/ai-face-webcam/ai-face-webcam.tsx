@@ -1529,74 +1529,73 @@ export default function AIFaceWebcam({
                         </div>
                     )}
 
-                    {/* Mobile Only: Beautiful Guidance & control buttons in the empty space below */}
-                    <div className='flex-1 w-full bg-transparent flex flex-col justify-between items-center md:hidden select-none -mt-20 z-20 pb-0'>
+                    {/* Mobile Only: Beautiful Guidance & control buttons absolute positioned at the bottom */}
+                    <div className='absolute bottom-0 left-0 w-full bg-transparent flex flex-col items-center md:hidden select-none z-20 pb-0 pointer-events-none'>
                         
-                        {/* Glassmorphic Guidance Card exactly like the image */}
-                        <div className='w-[92%] bg-[#131b2e]/65 backdrop-blur-lg border border-white/10 rounded-3xl p-4 shadow-2xl flex flex-col items-center mt-2'>
+                        {/* Glassmorphic Guidance Card */}
+                        <div className='w-[90%] bg-[#131b2e]/70 backdrop-blur-lg border border-white/10 rounded-2xl p-3 shadow-2xl flex flex-col items-center mb-4 pointer-events-auto'>
                             {/* 3 Step Cards row */}
                             <div className='grid grid-cols-3 gap-2 w-full'>
                                 {/* Step 1 */}
-                                <div className='bg-white/5 border border-white/5 rounded-2xl p-3 flex flex-col items-start text-left'>
-                                    <div className='w-8 h-8 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-2'>
-                                        <Eye className='w-4.5 h-4.5 text-blue-400' strokeWidth={1.5} />
+                                <div className='bg-white/5 border border-white/5 rounded-xl p-2 flex flex-col items-start text-left'>
+                                    <div className='w-7 h-7 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-1.5'>
+                                        <Eye className='w-4 h-4 text-blue-400' strokeWidth={1.5} />
                                     </div>
-                                    <div className='text-blue-400 font-bold text-[11px] whitespace-nowrap'>1. Cân mắt</div>
-                                    <div className='text-[9px] text-slate-400 leading-tight mt-1'>Khớp mắt ngang trục ngang X</div>
+                                    <div className='text-blue-400 font-bold text-[10px] whitespace-nowrap'>1. Cân mắt</div>
+                                    <div className='text-[8px] text-slate-400 leading-tight mt-0.5'>Khớp mắt ngang trục X</div>
                                 </div>
 
                                 {/* Step 2 */}
-                                <div className='bg-white/5 border border-white/5 rounded-2xl p-3 flex flex-col items-start text-left'>
-                                    <div className='w-8 h-8 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mb-2'>
-                                        {/* Nose SVG */}
-                                        <svg className='w-4.5 h-4.5 text-purple-400' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='1.5'>
+                                <div className='bg-white/5 border border-white/5 rounded-xl p-2 flex flex-col items-start text-left'>
+                                    <div className='w-7 h-7 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mb-1.5'>
+                                        <svg className='w-4 h-4 text-purple-400' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='1.5'>
                                             <path d='M9 15c0-2.5 2-4 3-6V4a2 2 0 0 1 4 0v5c1 2 3 3.5 3 6a3.5 3.5 0 0 1-7 0H12a3.5 3.5 0 0 1-7 0' strokeLinecap='round' strokeLinejoin='round' />
                                         </svg>
                                     </div>
-                                    <div className='text-purple-400 font-bold text-[11px] whitespace-nowrap'>2. Cân mũi</div>
-                                    <div className='text-[9px] text-slate-400 leading-tight mt-1'>Đặt sống mũi dọc trục đứng Y</div>
+                                    <div className='text-purple-400 font-bold text-[10px] whitespace-nowrap'>2. Cân mũi</div>
+                                    <div className='text-[8px] text-slate-400 leading-tight mt-0.5'>Đặt sống mũi dọc trục Y</div>
                                 </div>
 
                                 {/* Step 3 */}
-                                <div className='bg-white/5 border border-white/5 rounded-2xl p-3 flex flex-col items-start text-left'>
-                                    <div className='w-8 h-8 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center mb-2'>
-                                        <Camera className='w-4.5 h-4.5 text-green-400' strokeWidth={1.5} />
+                                <div className='bg-white/5 border border-white/5 rounded-xl p-2 flex flex-col items-start text-left'>
+                                    <div className='w-7 h-7 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center mb-1.5'>
+                                        <Camera className='w-4 h-4 text-green-400' strokeWidth={1.5} />
                                     </div>
-                                    <div className='text-green-400 font-bold text-[11px] whitespace-nowrap'>3. Tự chụp</div>
-                                    <div className='text-[9px] text-slate-400 leading-tight mt-1'>Giữ im 0.5s để tự động chụp</div>
+                                    <div className='text-green-400 font-bold text-[10px] whitespace-nowrap'>3. Tự chụp</div>
+                                    <div className='text-[8px] text-slate-400 leading-tight mt-0.5'>Giữ im 0.5s tự chụp</div>
                                 </div>
                             </div>
 
                             {/* Tip text */}
-                            <div className='text-center text-[10px] text-slate-400 mt-4 font-medium'>
+                            <div className='text-center text-[10px] text-slate-400 mt-2 font-medium'>
                                 * Đứng cách camera khoảng 50cm, giữ thẳng đầu.
                             </div>
                         </div>
 
                         {/* Large White Capture Button inside curved container at the absolute bottom */}
-                        <div className='relative w-full bg-[#080c14] flex flex-col items-center pt-2 pb-12 mt-auto'>
+                        <div className='relative w-full bg-[#080c14]/90 backdrop-blur-md flex flex-col items-center pt-2 pb-8 pointer-events-auto'>
                             {/* Curved SVG border */}
                             <svg 
-                                className='absolute top-[-24px] left-0 w-full h-[25px] pointer-events-none'
-                                viewBox='0 0 375 25'
+                                className='absolute top-[-20px] left-0 w-full h-[21px] pointer-events-none'
+                                viewBox='0 0 375 20'
                                 preserveAspectRatio='none'
                                 fill='none'
                                 xmlns='http://www.w3.org/2000/svg'
                             >
                                 <path 
-                                    d='M0 12C90 12 110 24 187.5 24C265 24 285 12 375 12V25H0V12Z' 
-                                    fill='#080c14' 
+                                    d='M0 10C90 10 110 20 187.5 20C265 20 285 10 375 10V20H0V10Z' 
+                                    fill='rgba(8, 12, 20, 0.9)' 
                                 />
                                 <path 
-                                    d='M0 12C90 12 110 24 187.5 24C265 24 285 12 375 12' 
-                                    stroke='rgba(255, 255, 255, 0.1)' 
+                                    d='M0 10C90 10 110 20 187.5 20C265 20 285 10 375 10' 
+                                    stroke='rgba(255, 255, 255, 0.08)' 
                                     strokeWidth='1' 
                                     fill='none'
                                 />
                             </svg>
                             
                             {/* Control row with back, capture, and switch camera buttons */}
-                            <div className='flex items-center justify-between w-full max-w-[320px] px-2 z-10'>
+                            <div className='flex items-center justify-between w-full max-w-[300px] px-2 z-10'>
                                 {/* Left: Go Back Button */}
                                 <button
                                     onClick={() => navigate(-1)}
@@ -1610,13 +1609,13 @@ export default function AIFaceWebcam({
                                 <button
                                     onClick={captureImage}
                                     disabled={isStartingCapture || isProcessingCapture || isSavingData}
-                                    className='relative w-20 h-20 rounded-full flex items-center justify-center active:scale-95 transition-all shadow-[0_0_30px_rgba(139,92,246,0.25),0_0_15px_rgba(255,255,255,0.15)]'
+                                    className='relative w-18 h-18 rounded-full flex items-center justify-center active:scale-95 transition-all shadow-[0_0_25px_rgba(139,92,246,0.2),0_0_12px_rgba(255,255,255,0.1)]'
                                     title='Chụp ảnh'
                                 >
                                     {/* Outer ring border */}
-                                    <div className='absolute inset-0 rounded-full border-[5px] border-white opacity-95 shadow-[0_0_15px_rgba(255,255,255,0.5)]'></div>
+                                    <div className='absolute inset-0 rounded-full border-[4px] border-white opacity-95 shadow-[0_0_12px_rgba(255,255,255,0.4)]'></div>
                                     {/* Inner solid white circle */}
-                                    <div className='w-14 h-14 rounded-full bg-white shadow-[inset_0_0_8px_rgba(0,0,0,0.15)]'></div>
+                                    <div className='w-12 h-12 rounded-full bg-white shadow-[inset_0_0_6px_rgba(0,0,0,0.15)]'></div>
                                 </button>
 
                                 {/* Right: Switch Camera Button */}
