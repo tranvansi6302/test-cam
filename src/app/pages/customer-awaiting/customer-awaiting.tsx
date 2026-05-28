@@ -75,30 +75,29 @@ export default function CustomerAwaiting() {
     }
 
     const CustomerSkeletonItem = () => (
-        <div className='flex flex-col gap-3 bg-white border border-slate-100 rounded-xl p-4 shadow-sm'>
-            <div className='flex flex-col sm:flex-row gap-4 items-stretch animate-pulse'>
-                <div className='flex flex-row gap-4 flex-1 items-center sm:items-start'>
-                    <Skeleton width='85px' height='113px' className='sm:w-[105px] sm:h-[140px] rounded-lg shrink-0' />
-                    <div className='flex-1 flex flex-col justify-center gap-2'>
+        <div className='flex flex-col gap-2.5 bg-white border border-slate-100 rounded-xl p-3 shadow-sm'>
+            <div className='flex flex-col sm:flex-row gap-3.5 items-stretch animate-pulse'>
+                <div className='flex flex-row gap-3.5 flex-1 items-center sm:items-start'>
+                    <Skeleton width='75px' height='100px' className='sm:w-[90px] sm:h-[120px] rounded-lg shrink-0' />
+                    <div className='flex-1 flex flex-col justify-center gap-1.5'>
                         <div className='flex items-center gap-2'>
-                            <Skeleton width='120px' height='20px' />
-                            <Skeleton width='70px' height='16px' className='rounded-full' />
+                            <Skeleton width='110px' height='18px' />
+                            <Skeleton width='65px' height='16px' className='rounded-full' />
                         </div>
-                        <div className='grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1.5'>
-                            <Skeleton width='160px' height='16px' />
-                            <Skeleton width='140px' height='16px' />
-                            <Skeleton width='120px' height='16px' />
-                            <Skeleton width='185px' height='16px' />
+                        <div className='flex flex-col gap-1'>
+                            <Skeleton width='130px' height='14px' />
+                            <Skeleton width='90px' height='14px' className='hidden sm:block' />
                         </div>
                     </div>
                 </div>
-                <div className='hidden sm:flex flex-col justify-center shrink-0 w-[220px] md:w-[240px] pl-4 border-l border-slate-100 gap-2.5'>
-                    <Skeleton width='100%' height='32px' className='rounded-lg' />
-                    <Skeleton width='100%' height='32px' className='rounded-lg' />
+                <div className='hidden sm:flex flex-col justify-center shrink-0 w-full sm:w-[210px] md:w-[220px] pl-3.5 border-l border-slate-100 gap-2'>
+                    <Skeleton width='100%' height='28px' className='rounded-lg' />
+                    <Skeleton width='100%' height='28px' className='rounded-lg' />
                 </div>
             </div>
-            <div className='flex sm:hidden flex-col gap-2 pt-2.5 border-t border-slate-100 mt-1 w-full'>
-                <Skeleton width='100%' height='36px' className='rounded-lg' />
+            <div className='flex sm:hidden gap-2 items-center pt-2 border-t border-slate-100 mt-1 w-full animate-pulse'>
+                <Skeleton width='140px' height='26px' className='rounded' />
+                <Skeleton width='100%' height='26px' className='rounded-lg' />
             </div>
         </div>
     )
@@ -127,12 +126,10 @@ export default function CustomerAwaiting() {
                         >
                             <ArrowLeft size={16} className='text-slate-600' />
                         </button>
-                        
+
                         <div className='flex items-center gap-2 min-w-0'>
-                            <h1 className='font-bold text-slate-800 text-[16px] truncate'>Phân tích khuôn mặt</h1>
-                            <span className='px-2 py-0.5 text-[11px] font-bold bg-indigo-50 text-indigo-600 rounded-full border border-indigo-100 shrink-0'>
-                                {aiFaceList?.data?.data?.length || 0} hàng đợi
-                            </span>
+                            <h2 className='font-medium text-slate-800 text-[15px] truncate'>Phân tích khuôn mặt</h2>
+
                         </div>
 
                         {/* Filter Tabs for Desktop/Tablet (>= 1024px) */}
@@ -143,16 +140,14 @@ export default function CustomerAwaiting() {
                                     <button
                                         key={item.value}
                                         onClick={() => setActiveFilter(item.value)}
-                                        className={`px-3 py-1 text-xs font-semibold rounded-md transition-all flex items-center gap-1.5 cursor-pointer ${
-                                            isActive 
-                                                ? 'bg-white text-slate-800 shadow-sm border border-slate-100' 
-                                                : 'text-slate-500 hover:text-slate-800 hover:bg-white/40'
-                                        }`}
+                                        className={`px-3 py-1 text-xs font-semibold rounded-md transition-all flex items-center gap-1.5 cursor-pointer ${isActive
+                                            ? 'bg-white text-slate-800 shadow-sm border border-slate-100'
+                                            : 'text-slate-500 hover:text-slate-800 hover:bg-white/40'
+                                            }`}
                                     >
                                         <span>{item.label}</span>
-                                        <span className={`px-1.5 py-0.5 text-[9px] font-bold rounded-full ${
-                                            isActive ? 'bg-slate-800 text-white' : 'bg-slate-200 text-slate-600'
-                                        }`}>
+                                        <span className={`px-1.5 py-0.5 text-[9px] font-bold rounded-full ${isActive ? 'bg-slate-800 text-white' : 'bg-slate-200 text-slate-600'
+                                            }`}>
                                             {item.count}
                                         </span>
                                     </button>
@@ -181,16 +176,14 @@ export default function CustomerAwaiting() {
                                 <button
                                     key={item.value}
                                     onClick={() => setActiveFilter(item.value)}
-                                    className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
-                                        isActive 
-                                            ? 'bg-white text-slate-800 shadow-sm border border-slate-100' 
-                                            : 'text-slate-500 hover:text-slate-800 bg-transparent'
-                                    }`}
+                                    className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${isActive
+                                        ? 'bg-white text-slate-800 shadow-sm border border-slate-100'
+                                        : 'text-slate-500 hover:text-slate-800 bg-transparent'
+                                        }`}
                                 >
                                     <span>{item.label}</span>
-                                    <span className={`px-1.5 py-0.5 text-[9px] font-bold rounded-full ${
-                                        isActive ? 'bg-slate-800 text-white' : 'bg-slate-200 text-slate-600'
-                                    }`}>
+                                    <span className={`px-1.5 py-0.5 text-[9px] font-bold rounded-full ${isActive ? 'bg-slate-800 text-white' : 'bg-slate-200 text-slate-600'
+                                        }`}>
                                         {item.count}
                                     </span>
                                 </button>
