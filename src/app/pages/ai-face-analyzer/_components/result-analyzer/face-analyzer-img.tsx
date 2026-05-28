@@ -28,38 +28,46 @@ const addBase64Prefix = (base64String: string | undefined) => {
 interface FaceAnalyzerImgProps {
     title: string
     imageSrc: string
+    onClick?: () => void
 }
 
-/**
- * Component to display an image with title and loading state
- */
-const ResultImageItem = ({ title, imageSrc }: FaceAnalyzerImgProps) => {
+const ResultImageItem = ({ title, imageSrc, onClick }: FaceAnalyzerImgProps) => {
     const { isCallParamChange } = useAnalysisStore()
-    // Show skeleton when loading, updating, or no image is available
     const showSkeleton = isCallParamChange
 
     return (
-        <div className='flex flex-col'>
-            <p className='w-full px-2 py-1 rounded-[4px] bg-[#f4f4f4] border border-dashed border-[#e7e7e7] text-[#505050] text-sm font-medium mb-1 text-center text-[12px]'>
-                {title}
-            </p>
+        <div className='flex flex-col relative'>
             {showSkeleton ? (
-                <div className='w-full  rounded-[4px] overflow-hidden h-[300px]'>
+                <div className='w-full rounded-[4px] overflow-hidden aspect-square relative'>
                     <Skeleton className='w-full !h-full !rounded-[4px] flex items-center justify-center flex-col gap-2'></Skeleton>
+                    {/* Elegant overlay title */}
+                    <div className='absolute top-2 left-2 px-2 py-0.5 rounded bg-black/60 backdrop-blur-sm text-white text-[11px] font-semibold select-none z-10 shadow-sm'>
+                        {title}
+                    </div>
                 </div>
             ) : (
-                <Image
-                    preview
-                    src={addBase64Prefix(imageSrc)}
-                    alt={title}
-                    style={{
-                        objectFit: 'cover',
-                        objectPosition: 'center',
-                        maxWidth: '360px',
-                        height: '300px'
-                    }}
-                    className='w-full object-contain rounded-[4px] overflow-hidden'
-                />
+                <div
+                    onClick={onClick}
+                    className={`w-full aspect-square rounded-[4px] overflow-hidden relative group ${
+                        onClick ? 'cursor-pointer' : ''
+                    }`}
+                >
+                    <img
+                        src={addBase64Prefix(imageSrc)}
+                        alt={title}
+                        className='w-full h-full object-cover rounded-[4px]'
+                    />
+                    {/* Hover eye icon overlay just like the bottom one */}
+                    {onClick && (
+                        <div className='absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-[5]'>
+                            <Eye className='w-8 h-8 text-white' />
+                        </div>
+                    )}
+                    {/* Elegant overlay title inside image */}
+                    <div className='absolute top-2 left-2 px-2 py-0.5 rounded bg-black/60 backdrop-blur-sm text-white text-[11px] font-semibold select-none z-10 shadow-sm group-hover:bg-black/80 transition-all'>
+                        {title}
+                    </div>
+                </div>
             )}
         </div>
     )
@@ -168,8 +176,7 @@ const FaceAnalyzerImgSet = ({
         flip: boolean
     } | null>(null)
 
-    // State để hiển thị zoom controls (không cần active state)
-    const [showZoomControls, setShowZoomControls] = useState<string | null>(null)
+
 
     // Giới hạn di chuyển chân mày: X và Y đều giới hạn trong khoảng ±5px từ vị trí ban đầu
     const getConstrainedPosition = (newX: number, newY: number, originalPosition: Position): Position => {
@@ -480,6 +487,7 @@ const FaceAnalyzerImgSet = ({
     }, [dropZoneWidth, dropZoneHeight])
 
     // Update dimensions
+    // Update dimensions for outside container using ResizeObserver
     useEffect(() => {
         const updateDimensions = () => {
             if (dropZoneRef.current) {
@@ -489,21 +497,38 @@ const FaceAnalyzerImgSet = ({
                 setDropZoneHeight(height)
                 localStorage.setItem(STORAGE_KEYS.DROPZONE_SIZE, JSON.stringify({ width, height }))
             }
+        }
 
-            if (openModalPreview && modalDropZoneRef.current) {
+        updateDimensions()
+
+        const resizeObserver = new ResizeObserver(() => {
+            updateDimensions()
+        })
+
+        if (dropZoneRef.current) {
+            resizeObserver.observe(dropZoneRef.current)
+        }
+
+        return () => {
+            resizeObserver.disconnect()
+        }
+    }, [])
+
+    // Update dimensions for modal container using ResizeObserver
+    useEffect(() => {
+        if (!openModalPreview) return
+
+        const updateModalDimensions = () => {
+            if (modalDropZoneRef.current) {
                 const modalWidth = modalDropZoneRef.current.offsetWidth
                 const modalHeight = modalDropZoneRef.current.offsetHeight
                 setModalDropZoneWidth(modalWidth)
                 setModalDropZoneHeight(modalHeight)
 
-                if (dropZoneRef.current) {
-                    const outsideWidth = dropZoneRef.current.offsetWidth
-                    const outsideHeight = dropZoneRef.current.offsetHeight
-                    const effectiveModalWidth = 568
-                    const effectiveModalHeight = 568
-                    setScaleFactorX(effectiveModalWidth / outsideWidth)
-                    setScaleFactorY(effectiveModalHeight / outsideHeight)
-                }
+                const effectiveModalWidth = modalWidth
+                const effectiveModalHeight = modalHeight
+                setScaleFactorX(effectiveModalWidth / 302)
+                setScaleFactorY(effectiveModalHeight / 302)
 
                 if (canvasRef.current) {
                     canvasRef.current.width = modalWidth
@@ -513,10 +538,24 @@ const FaceAnalyzerImgSet = ({
             }
         }
 
-        updateDimensions()
-        window.addEventListener('resize', updateDimensions)
-        return () => window.removeEventListener('resize', updateDimensions)
-    }, [openModalPreview])
+        // Run with small delay to ensure modal transitions are complete and dimensions are stable
+        const timer = setTimeout(() => {
+            updateModalDimensions()
+        }, 60)
+
+        const resizeObserver = new ResizeObserver(() => {
+            updateModalDimensions()
+        })
+
+        if (modalDropZoneRef.current) {
+            resizeObserver.observe(modalDropZoneRef.current)
+        }
+
+        return () => {
+            clearTimeout(timer)
+            resizeObserver.disconnect()
+        }
+    }, [openModalPreview, placedBoxes])
 
     // Drag & Drop handlers for modal
     const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -949,108 +988,6 @@ const FaceAnalyzerImgSet = ({
         // No need to reset or recalculate positions when switching modes
     }
 
-    // Xử lý click để toggle zoom controls (chỉ desktop)
-    const handleEyebrowClick = (boxId: string) => {
-        if (showZoomControls === boxId) {
-            setShowZoomControls(null) // Hide zoom controls
-        } else {
-            setShowZoomControls(boxId) // Show zoom controls cho chân mày này
-        }
-    }
-
-    // Xử lý zoom in chân mày - đồng bộ cả 2 chân mày với anchor-based scaling
-    const handleZoomIn = () => {
-        setPlacedBoxes(
-            placedBoxes.map((box) => {
-                const currentScale = box.scale || 1
-                const newScale = currentScale + 0.1 // Không giới hạn max
-
-                // Tính toán vị trí mới để giữ inner corner (điểm đầu chân mày) cố định
-                const newPosition = { ...box.position }
-
-                if (currentScale !== newScale) {
-                    // Tính kích thước hiện tại và mới
-                    const currentWidth = eyebrowSize.width * currentScale
-                    const currentHeight = eyebrowSize.height * currentScale
-                    const newWidth = eyebrowSize.width * newScale
-                    const newHeight = eyebrowSize.height * newScale
-
-                    if (box.flip) {
-                        // Chân mày phải (flip=true): inner corner ở 20% từ trái (do flip từ 80%)
-                        // Tính vị trí inner corner hiện tại trong tọa độ tuyệt đối
-                        const currentInnerCornerX = box.position.x + currentWidth * 0.2
-                        const currentInnerCornerY = box.position.y + currentHeight * 0.5
-
-                        // Tính vị trí position mới để inner corner giữ nguyên
-                        newPosition.x = currentInnerCornerX - newWidth * 0.2
-                        newPosition.y = currentInnerCornerY - newHeight * 0.5
-                    } else {
-                        // Chân mày trái (flip=false): inner corner ở 80% từ trái
-                        // Tính vị trí inner corner hiện tại trong tọa độ tuyệt đối
-                        const currentInnerCornerX = box.position.x + currentWidth * 0.8
-                        const currentInnerCornerY = box.position.y + currentHeight * 0.5
-
-                        // Tính vị trí position mới để inner corner giữ nguyên
-                        newPosition.x = currentInnerCornerX - newWidth * 0.8
-                        newPosition.y = currentInnerCornerY - newHeight * 0.5
-                    }
-                }
-
-                return {
-                    ...box,
-                    scale: newScale,
-                    position: newPosition
-                }
-            })
-        )
-    }
-
-    // Xử lý zoom out chân mày - đồng bộ cả 2 chân mày với anchor-based scaling
-    const handleZoomOut = () => {
-        setPlacedBoxes(
-            placedBoxes.map((box) => {
-                const currentScale = box.scale || 1
-                const newScale = Math.max(currentScale - 0.1, 0.1) // Min scale 0.1 để tránh biến mất
-
-                // Tính toán vị trí mới để giữ inner corner (điểm đầu chân mày) cố định
-                const newPosition = { ...box.position }
-
-                if (currentScale !== newScale) {
-                    // Tính kích thước hiện tại và mới
-                    const currentWidth = eyebrowSize.width * currentScale
-                    const currentHeight = eyebrowSize.height * currentScale
-                    const newWidth = eyebrowSize.width * newScale
-                    const newHeight = eyebrowSize.height * newScale
-
-                    if (box.flip) {
-                        // Chân mày phải (flip=true): inner corner ở 20% từ trái (do flip từ 80%)
-                        // Tính vị trí inner corner hiện tại trong tọa độ tuyệt đối
-                        const currentInnerCornerX = box.position.x + currentWidth * 0.2
-                        const currentInnerCornerY = box.position.y + currentHeight * 0.5
-
-                        // Tính vị trí position mới để inner corner giữ nguyên
-                        newPosition.x = currentInnerCornerX - newWidth * 0.2
-                        newPosition.y = currentInnerCornerY - newHeight * 0.5
-                    } else {
-                        // Chân mày trái (flip=false): inner corner ở 80% từ trái
-                        // Tính vị trí inner corner hiện tại trong tọa độ tuyệt đối
-                        const currentInnerCornerX = box.position.x + currentWidth * 0.8
-                        const currentInnerCornerY = box.position.y + currentHeight * 0.5
-
-                        // Tính vị trí position mới để inner corner giữ nguyên
-                        newPosition.x = currentInnerCornerX - newWidth * 0.8
-                        newPosition.y = currentInnerCornerY - newHeight * 0.5
-                    }
-                }
-
-                return {
-                    ...box,
-                    scale: newScale,
-                    position: newPosition
-                }
-            })
-        )
-    }
 
     // Auto-save images when placedBoxes are set and modal dimensions are ready
     // useEffect(() => {
@@ -1120,8 +1057,8 @@ const FaceAnalyzerImgSet = ({
         }
 
         try {
-            const canvasWidth = modalDropZoneWidth || 568
-            const canvasHeight = modalDropZoneHeight || 568
+            const canvasWidth = modalDropZoneWidth || 302
+            const canvasHeight = modalDropZoneHeight || 302
 
             // Function to create eyebrow image with given background
             const createEyebrowImage = (backgroundImageSrc: string): Promise<string> => {
@@ -1140,31 +1077,15 @@ const FaceAnalyzerImgSet = ({
                     backgroundImg.crossOrigin = 'anonymous'
 
                     backgroundImg.onload = () => {
-                        // Draw background with 'contain' behavior to preserve aspect ratio
-                        const imgW = backgroundImg.width
-                        const imgH = backgroundImg.height
+                        // Draw background to fill the canvas exactly (100% 100%)
                         const canvasW = canvas.width
                         const canvasH = canvas.height
-                        const imgRatio = imgW / imgH
-                        const canvasRatio = canvasW / canvasH
-                        let drawW = canvasW
-                        let drawH = canvasH
-                        let offsetX = 0
-                        let offsetY = 0
-                        if (imgRatio > canvasRatio) {
-                            drawW = canvasW
-                            drawH = Math.round(canvasW / imgRatio)
-                            offsetY = Math.round((canvasH - drawH) / 2)
-                        } else {
-                            drawH = canvasH
-                            drawW = Math.round(canvasH * imgRatio)
-                            offsetX = Math.round((canvasW - drawW) / 2)
-                        }
+                        const offsetX = 0
+                        const offsetY = 0
                         ctx.clearRect(0, 0, canvasW, canvasH)
-                        ctx.drawImage(backgroundImg, offsetX, offsetY, drawW, drawH)
+                        ctx.drawImage(backgroundImg, 0, 0, canvasW, canvasH)
 
                         const loadEyebrowImages = async () => {
-                            const HEIGHT_BOOST_RATIO = 1.5 // 1.5x taller eyebrows on exported preview
                             const eyebrowPromises = placedBoxes.map((box) => {
                                 return new Promise<void>((resolve) => {
                                     const img = new HTMLImageElement()
@@ -1173,8 +1094,8 @@ const FaceAnalyzerImgSet = ({
                                     img.onload = () => {
                                         const modalPosition = convertPositionFromOutsideToModal(box.position.x, box.position.y)
                                         const scale = box.scale || 1
-                                        const scaledWidth = eyebrowSize.width * scale
-                                        const scaledHeight = eyebrowSize.height * scale * HEIGHT_BOOST_RATIO
+                                        const scaledWidth = eyebrowSize.width * scale * (canvasWidth / 302)
+                                        const scaledHeight = scaledWidth * (img.height / img.width)
 
                                         // Apply same letterbox offsets so eyebrows align to background
                                         const drawX = modalPosition.x + offsetX
@@ -1238,36 +1159,44 @@ const FaceAnalyzerImgSet = ({
         }
     }
 
+    const handleOpenModal = () => {
+        if (isFirstTimeApply) {
+            setIsLoadingModal(true)
+            setTimeout(() => {
+                setIsLoadingModal(false)
+                setOpenModalPreview(true)
+            }, 3000)
+        } else {
+            setOpenModalPreview(true)
+        }
+    }
+
     return (
         <Fragment>
-            <div
-                style={{
-                    width: '100%',
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr 1fr',
-                    gap: '10px',
-                    alignItems: 'stretch'
-                }}
-            >
-                <ResultImageItem title='Ảnh gốc' imageSrc={analysisData?.input_final_b64_string || ''} />
+            <div className='w-full grid grid-cols-1 md:grid-cols-3 gap-3.5 items-stretch'>
+                <ResultImageItem
+                    title='Ảnh gốc'
+                    imageSrc={analysisData?.input_final_b64_string || ''}
+                    onClick={handleOpenModal}
+                />
                 <ResultImageItem
                     title='Đè chân mày'
                     imageSrc={
                         base64WithEyebrow ? base64WithEyebrow : analysisData?.output_with_eyebrows_orginal_final_b64_string || ''
                     }
+                    onClick={handleOpenModal}
                 />
-                <div className='flex flex-col gap-1'>
-                    <div className='flex justify-between items-center'>
-                        <p className='w-full px-2 py-1 rounded-[4px] bg-[#f4f4f4] border border-dashed border-[#e7e7e7] text-[#505050] text-sm font-medium text-center text-[12px]'>
-                            Ảnh xóa chân mày
-                        </p>
-                    </div>
+                <div className='flex flex-col relative'>
                     {isCallParamChange ? (
-                        <div className='w-full  rounded-[4px] overflow-hidden h-[300px]'>
+                        <div className='w-full rounded-[4px] overflow-hidden aspect-square relative'>
                             <Skeleton className='w-full !h-full !rounded-[4px] flex items-center justify-center flex-col gap-2'></Skeleton>
+                            {/* Elegant overlay title */}
+                            <div className='absolute top-2 left-2 px-2 py-0.5 rounded bg-black/60 backdrop-blur-sm text-white text-[11px] font-semibold select-none z-10 shadow-sm'>
+                                Ảnh xóa chân mày
+                            </div>
                         </div>
                     ) : (
-                        <div className='h-[300px] rounded-[4px]'>
+                        <div className='w-full aspect-square rounded-[4px] overflow-hidden relative'>
                             <div
                                 ref={dropZoneRef}
                                 style={{
@@ -1281,20 +1210,14 @@ const FaceAnalyzerImgSet = ({
                                     borderRadius: '4px'
                                 }}
                                 className='relative group w-full h-full cursor-pointer'
-                                onClick={() => {
-                                    if (isFirstTimeApply) {
-                                        setIsLoadingModal(true)
-                                        setTimeout(() => {
-                                            setIsLoadingModal(false)
-                                            setOpenModalPreview(true)
-                                        }, 3000)
-                                    } else {
-                                        setOpenModalPreview(true)
-                                    }
-                                }}
+                                onClick={handleOpenModal}
                             >
                                 <div className='absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center'>
                                     <Eye className='w-8 h-8 text-white' />
+                                </div>
+                                {/* Elegant overlay title inside image */}
+                                <div className='absolute top-2 left-2 px-2 py-0.5 rounded bg-black/60 backdrop-blur-sm text-white text-[11px] font-semibold select-none z-10 shadow-sm group-hover:bg-black/80 transition-all'>
+                                    Ảnh xóa chân mày
                                 </div>
                                 {/* NO EYEBROWS DISPLAYED HERE - Only in modal */}
                             </div>
@@ -1323,28 +1246,22 @@ const FaceAnalyzerImgSet = ({
                                 backgroundImage: showOverlayImage
                                     ? `url(data:image/png;base64,${analysisData?.output_with_eyebrows_orginal_final_b64_string})`
                                     : `url(data:image/png;base64,${analysisData?.output_remove_eyebrows_final_b64_string})`,
-                                backgroundSize: 'contain',
+                                backgroundSize: '100% 100%',
                                 backgroundPosition: 'center',
                                 backgroundRepeat: 'no-repeat',
-                                aspectRatio: dropZoneHeight > 0 ? dropZoneWidth / dropZoneHeight : undefined
+                                aspectRatio: '1/1'
                             }}
                             className='w-full h-full rounded relative transition-colors touch-none overflow-hidden'
                             onDragOver={handleDragOver}
                             onDragLeave={handleDragLeave}
                             onDrop={handleDrop}
-                            onClick={(e) => {
-                                // Clear active state if clicking on background
-                                if (e.target === e.currentTarget) {
-                                    setShowZoomControls(null)
-                                }
-                            }}
                         >
                             <canvas ref={canvasRef} className='absolute top-0 left-0 w-full h-full pointer-events-none' />
                             {/* EYEBROWS DISPLAYED ONLY IN MODAL */}
                             {placedBoxes.map((box) => {
                                 const modalPosition = convertPositionFromOutsideToModal(box.position.x, box.position.y)
                                 const scale = box.scale || 1
-                                const scaledWidth = eyebrowSize.width * scale
+                                const scaledWidth = eyebrowSize.width * scale * (modalDropZoneWidth / 302)
                                 // const scaledHeight = eyebrowSize.height * scale
 
                                 return (
@@ -1357,18 +1274,12 @@ const FaceAnalyzerImgSet = ({
                                         y={modalPosition.y}
                                         flip={box.flip}
                                         width={scaledWidth}
-                                        // height={scaledHeight}
-                                        scale={scale}
-                                        isActive={showZoomControls === box.id}
                                         onDoubleClick={() => {
                                             const eyebrow = availableEyebrows.find((e) => box.image.includes(e.image))
                                             if (eyebrow) {
                                                 handleEyebrowDoubleClick(eyebrow)
                                             }
                                         }}
-                                        onClick={() => handleEyebrowClick(box.id)}
-                                        onZoomIn={handleZoomIn}
-                                        onZoomOut={handleZoomOut}
                                         className={hidePlacedBoxes ? 'opacity-0' : 'opacity-100'}
                                         noBorder={false}
                                     />

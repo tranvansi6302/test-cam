@@ -237,6 +237,24 @@ export default function AIFaceWebcam({
     const [landmarker, setLandmarker] = useState<FaceLandmarker | null>(null)
     const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user')
 
+    // Detect if device is a laptop/desktop vs mobile/tablet/iPad
+    const isMobileOrTablet = useMemo(() => {
+        if (typeof window === 'undefined' || typeof navigator === 'undefined') return false
+
+        const ua = navigator.userAgent
+        const isWindows = /Windows/i.test(ua)
+        const isLinux = /Linux/i.test(ua) && !/Android/i.test(ua)
+        const isMacPC = /Macintosh/i.test(ua) && !('ontouchstart' in window)
+
+        if (isWindows || isLinux || isMacPC) {
+            return false // It's a laptop/desktop PC, even if Windows/Linux has a touchscreen
+        }
+
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua) ||
+            (navigator.maxTouchPoints && navigator.maxTouchPoints > 1)
+    }, [])
+    const isLaptop = !isMobileOrTablet
+
     const toggleCamera = useCallback(() => {
         setFacingMode((prev) => (prev === 'user' ? 'environment' : 'user'))
     }, [])
@@ -488,10 +506,13 @@ export default function AIFaceWebcam({
                     cropWidth = Math.min(img.width - cropX, cropWidth)
                     cropHeight = Math.min(img.height - cropY, cropHeight)
 
-                    // Sử dụng tỉ lệ 3:4 cho kích thước đầu ra
-                    if (targetWidth > 0 && targetHeight > 0) {
-                        canvas.width = targetWidth
+                    // Sử dụng tỷ lệ 3:4 cho kích thước đầu ra nhưng không làm méo ảnh
+                    if (targetHeight > 0) {
                         canvas.height = targetHeight
+                        canvas.width = Math.round(targetHeight * targetRatio)
+                    } else if (targetWidth > 0) {
+                        canvas.width = targetWidth
+                        canvas.height = Math.round(targetWidth / targetRatio)
                     } else {
                         // Hoặc duy trì kích thước nhưng đảm bảo tỉ lệ 3:4
                         canvas.width = 600 // Chiều rộng mặc định
@@ -531,9 +552,17 @@ export default function AIFaceWebcam({
                     cropWidth = Math.min(img.width - cropX, finalCropWidth)
                     cropHeight = Math.min(img.height - cropY, finalCropHeight)
 
-                    // Sử dụng kích thước target nếu được cung cấp
-                    canvas.width = targetWidth > 0 ? targetWidth : 600
-                    canvas.height = targetHeight > 0 ? targetHeight : 800
+                    // Sử dụng kích thước target và điều chỉnh để giữ tỷ lệ 3:4
+                    if (targetHeight > 0) {
+                        canvas.height = targetHeight
+                        canvas.width = Math.round(targetHeight * targetRatio)
+                    } else if (targetWidth > 0) {
+                        canvas.width = targetWidth
+                        canvas.height = Math.round(targetWidth / targetRatio)
+                    } else {
+                        canvas.width = 600
+                        canvas.height = 800
+                    }
                 }
 
                 // Vẽ trực tiếp lên canvas chính
@@ -671,411 +700,411 @@ export default function AIFaceWebcam({
         try {
             if (!detector || !landmarker || !webcamRef.current?.video) return
 
-        const video = webcamRef.current.video
-        if (!video || video.readyState !== video.HAVE_ENOUGH_DATA) return
+            const video = webcamRef.current.video
+            if (!video || video.readyState !== video.HAVE_ENOUGH_DATA) return
 
-        const videoWidth = video.videoWidth
-        const videoHeight = video.videoHeight
+            const videoWidth = video.videoWidth
+            const videoHeight = video.videoHeight
 
-        const currentTime = performance.now()
-        const detections = detector.detectForVideo(video, currentTime)
+            const currentTime = performance.now()
+            const detections = detector.detectForVideo(video, currentTime)
 
-        // No face detected
-        if (detections.detections.length === 0) {
-            setFace(null)
-            setCurrentLandmarks([])
-            previousDetectionsRef.current = null
-            previousLandmarksRef.current = []
-            setGuidance({
-                isDetected: false,
-                tiltMessage: 'Vui lòng đưa khuôn mặt vào khung hình',
-                allCriteriaMet: false,
-                isAxesAligned: false,
-                isCompletelyWithinOval: false,
-                bypassOvalCheck: false
-            })
-            setStableFramesCount(0)
-            if (progressIntervalRef.current) {
-                clearInterval(progressIntervalRef.current)
-                progressIntervalRef.current = null
+            // No face detected
+            if (detections.detections.length === 0) {
+                setFace(null)
+                setCurrentLandmarks([])
+                previousDetectionsRef.current = null
+                previousLandmarksRef.current = []
+                setGuidance({
+                    isDetected: false,
+                    tiltMessage: 'Vui lòng đưa khuôn mặt vào khung hình',
+                    allCriteriaMet: false,
+                    isAxesAligned: false,
+                    isCompletelyWithinOval: false,
+                    bypassOvalCheck: false
+                })
+                setStableFramesCount(0)
+                if (progressIntervalRef.current) {
+                    clearInterval(progressIntervalRef.current)
+                    progressIntervalRef.current = null
+                }
+                return
             }
-            return
-        }
 
-        const detectedFace = detections.detections[0]
-        if (!detectedFace.boundingBox) return
+            const detectedFace = detections.detections[0]
+            if (!detectedFace.boundingBox) return
 
-        // Only update face state if we have a valid bounding box
-        if (detectedFace.boundingBox) {
-            setFace({
+            // Only update face state if we have a valid bounding box
+            if (detectedFace.boundingBox) {
+                setFace({
+                    boundingBox: detectedFace.boundingBox,
+                    categories: detectedFace.categories || []
+                })
+            }
+
+            const landmarkResult = await landmarker.detectForVideo(video, currentTime)
+            const landmarks = landmarkResult.faceLandmarks?.[0] || []
+
+            // Apply EMA smoothing to critical points to prevent shaking
+            if (landmarks.length >= 478) {
+                const alpha = 0.70 // High alpha for instantaneous tracking with subtle micro-jitter filter
+                const ema = emaLandmarksRef.current
+                const keyPoints = [1, 168, 133, 362]
+                keyPoints.forEach((idx) => {
+                    if (landmarks[idx]) {
+                        if (!ema[idx]) {
+                            ema[idx] = { x: landmarks[idx].x, y: landmarks[idx].y }
+                        } else {
+                            ema[idx].x = alpha * landmarks[idx].x + (1 - alpha) * ema[idx].x
+                            ema[idx].y = alpha * landmarks[idx].y + (1 - alpha) * ema[idx].y
+                        }
+                        landmarks[idx] = {
+                            ...landmarks[idx],
+                            x: ema[idx].x,
+                            y: ema[idx].y
+                        }
+                    }
+                })
+            }
+
+            // Only update landmarks if they've changed significantly
+            setCurrentLandmarks((prevLandmarks) => {
+                if (prevLandmarks.length !== landmarks.length) {
+                    return landmarks
+                }
+                // Only update if key landmarks have moved significantly
+                if (landmarks.length > 0 && prevLandmarks.length > 0) {
+                    const keyPoints = [1, 168, 133, 362] // Nose tip, chin, left inner corner, right inner corner
+                    for (const point of keyPoints) {
+                        if (
+                            !landmarks[point] ||
+                            !prevLandmarks[point] ||
+                            Math.abs(landmarks[point].x - prevLandmarks[point].x) > 0.01 ||
+                            Math.abs(landmarks[point].y - prevLandmarks[point].y) > 0.01
+                        ) {
+                            return landmarks
+                        }
+                    }
+                }
+                return prevLandmarks
+            })
+
+            if (landmarks.length === 0) {
+                setGuidance({
+                    isDetected: false,
+                    tiltMessage: 'Không nhận diện được khuôn mặt',
+                    allCriteriaMet: false,
+                    isAxesAligned: false,
+                    isCompletelyWithinOval: false,
+                    bypassOvalCheck: false
+                })
+                setStableFramesCount(0)
+                if (progressIntervalRef.current) {
+                    clearInterval(progressIntervalRef.current)
+                    progressIntervalRef.current = null
+                }
+                previousDetectionsRef.current = null
+                previousLandmarksRef.current = []
+                return
+            }
+
+            // Cache the valid detection and smoothed landmarks for high-precision cropping
+            previousDetectionsRef.current = {
                 boundingBox: detectedFace.boundingBox,
                 categories: detectedFace.categories || []
-            })
-        }
+            }
+            previousLandmarksRef.current = landmarks
 
-        const landmarkResult = await landmarker.detectForVideo(video, currentTime)
-        const landmarks = landmarkResult.faceLandmarks?.[0] || []
+            // Calculate parameters
+            const idealWidth = videoWidth * (videoHeight > videoWidth ? 0.45 : 0.25)
+            const idealCenterX = videoWidth / 2
+            const idealCenterY = videoHeight * 0.45
+            const radiusX = idealWidth / 2
+            const radiusY = (idealWidth * 1.3) / 2
 
-        // Apply EMA smoothing to critical points to prevent shaking
-        if (landmarks.length >= 478) {
-            const alpha = 0.70 // High alpha for instantaneous tracking with subtle micro-jitter filter
-            const ema = emaLandmarksRef.current
-            const keyPoints = [1, 168, 133, 362]
-            keyPoints.forEach((idx) => {
-                if (landmarks[idx]) {
-                    if (!ema[idx]) {
-                        ema[idx] = { x: landmarks[idx].x, y: landmarks[idx].y }
-                    } else {
-                        ema[idx].x = alpha * landmarks[idx].x + (1 - alpha) * ema[idx].x
-                        ema[idx].y = alpha * landmarks[idx].y + (1 - alpha) * ema[idx].y
-                    }
-                    landmarks[idx] = {
-                        ...landmarks[idx],
-                        x: ema[idx].x,
-                        y: ema[idx].y
-                    }
+            // Use larger frame for initial detection - outer frame check
+            const flippedBoundingBox = {
+                ...detectedFace.boundingBox,
+                originX: facingMode === 'user'
+                    ? videoWidth - (detectedFace.boundingBox.originX + detectedFace.boundingBox.width)
+                    : detectedFace.boundingBox.originX
+            }
+
+            // Kiểm tra xem khuôn mặt có nằm hoàn toàn trong khung oval ngoài không
+            const outerRadiusX = radiusX * 1.1
+            const outerRadiusY = radiusY * 1.1
+            const isCompletelyWithinOuterOval = isFaceCompletelyWithinOuterOval(
+                flippedBoundingBox,
+                idealCenterX,
+                idealCenterY,
+                outerRadiusX,
+                outerRadiusY,
+                landmarks,
+                videoWidth,
+                videoHeight,
+                facingMode === 'user' ? (x) => videoWidth - x : (x) => x
+            )
+
+            // Bỏ qua việc kiểm tra nằm trong khung
+            const bypassOvalCheck = false
+
+            // 1. FIRST CHECK: Is the face completely within the frame?
+            if (!isCompletelyWithinOuterOval && !bypassOvalCheck) {
+                // Xác định vị trí khuôn mặt so với khung
+                const faceX = detectedFace.boundingBox.originX + detectedFace.boundingBox.width / 2
+                const faceY = detectedFace.boundingBox.originY + detectedFace.boundingBox.height / 2
+
+                let positionMessage = 'Di chuyển để khuôn mặt nằm trong khung hình vuông'
+
+                // Xác định hướng di chuyển cụ thể
+                if (faceX < idealCenterX - radiusX * 0.5) {
+                    positionMessage = 'Di chuyển sang PHẢI để khuôn mặt vào trong khung'
+                } else if (faceX > idealCenterX + radiusX * 0.5) {
+                    positionMessage = 'Di chuyển sang TRÁI để khuôn mặt vào trong khung'
+                } else if (faceY < idealCenterY - radiusY * 0.5) {
+                    positionMessage = 'Di chuyển XUỐNG để khuôn mặt vào trong khung'
+                } else if (faceY > idealCenterY + radiusY * 0.5) {
+                    positionMessage = 'Di chuyển LÊN để khuôn mặt vào trong khung'
                 }
-            })
-        }
 
-        // Only update landmarks if they've changed significantly
-        setCurrentLandmarks((prevLandmarks) => {
-            if (prevLandmarks.length !== landmarks.length) {
-                return landmarks
-            }
-            // Only update if key landmarks have moved significantly
-            if (landmarks.length > 0 && prevLandmarks.length > 0) {
-                const keyPoints = [1, 168, 133, 362] // Nose tip, chin, left inner corner, right inner corner
-                for (const point of keyPoints) {
-                    if (
-                        !landmarks[point] ||
-                        !prevLandmarks[point] ||
-                        Math.abs(landmarks[point].x - prevLandmarks[point].x) > 0.01 ||
-                        Math.abs(landmarks[point].y - prevLandmarks[point].y) > 0.01
-                    ) {
-                        return landmarks
-                    }
-                }
-            }
-            return prevLandmarks
-        })
-
-        if (landmarks.length === 0) {
-            setGuidance({
-                isDetected: false,
-                tiltMessage: 'Không nhận diện được khuôn mặt',
-                allCriteriaMet: false,
-                isAxesAligned: false,
-                isCompletelyWithinOval: false,
-                bypassOvalCheck: false
-            })
-            setStableFramesCount(0)
-            if (progressIntervalRef.current) {
-                clearInterval(progressIntervalRef.current)
-                progressIntervalRef.current = null
-            }
-            previousDetectionsRef.current = null
-            previousLandmarksRef.current = []
-            return
-        }
-
-        // Cache the valid detection and smoothed landmarks for high-precision cropping
-        previousDetectionsRef.current = {
-            boundingBox: detectedFace.boundingBox,
-            categories: detectedFace.categories || []
-        }
-        previousLandmarksRef.current = landmarks
-
-        // Calculate parameters
-        const idealWidth = videoWidth * (videoHeight > videoWidth ? 0.45 : 0.25)
-        const idealCenterX = videoWidth / 2
-        const idealCenterY = videoHeight * 0.45
-        const radiusX = idealWidth / 2
-        const radiusY = (idealWidth * 1.3) / 2
-
-        // Use larger frame for initial detection - outer frame check
-        const flippedBoundingBox = {
-            ...detectedFace.boundingBox,
-            originX: facingMode === 'user'
-                ? videoWidth - (detectedFace.boundingBox.originX + detectedFace.boundingBox.width)
-                : detectedFace.boundingBox.originX
-        }
-
-        // Kiểm tra xem khuôn mặt có nằm hoàn toàn trong khung oval ngoài không
-        const outerRadiusX = radiusX * 1.1
-        const outerRadiusY = radiusY * 1.1
-        const isCompletelyWithinOuterOval = isFaceCompletelyWithinOuterOval(
-            flippedBoundingBox,
-            idealCenterX,
-            idealCenterY,
-            outerRadiusX,
-            outerRadiusY,
-            landmarks,
-            videoWidth,
-            videoHeight,
-            facingMode === 'user' ? (x) => videoWidth - x : (x) => x
-        )
-
-        // Bỏ qua việc kiểm tra nằm trong khung
-        const bypassOvalCheck = false
-
-        // 1. FIRST CHECK: Is the face completely within the frame?
-        if (!isCompletelyWithinOuterOval && !bypassOvalCheck) {
-            // Xác định vị trí khuôn mặt so với khung
-            const faceX = detectedFace.boundingBox.originX + detectedFace.boundingBox.width / 2
-            const faceY = detectedFace.boundingBox.originY + detectedFace.boundingBox.height / 2
-
-            let positionMessage = 'Di chuyển để khuôn mặt nằm trong khung hình vuông'
-
-            // Xác định hướng di chuyển cụ thể
-            if (faceX < idealCenterX - radiusX * 0.5) {
-                positionMessage = 'Di chuyển sang PHẢI để khuôn mặt vào trong khung'
-            } else if (faceX > idealCenterX + radiusX * 0.5) {
-                positionMessage = 'Di chuyển sang TRÁI để khuôn mặt vào trong khung'
-            } else if (faceY < idealCenterY - radiusY * 0.5) {
-                positionMessage = 'Di chuyển XUỐNG để khuôn mặt vào trong khung'
-            } else if (faceY > idealCenterY + radiusY * 0.5) {
-                positionMessage = 'Di chuyển LÊN để khuôn mặt vào trong khung'
-            }
-
-            // Khuôn mặt không nằm đủ trong khung
-            setGuidance({
-                isDetected: true,
-                tiltMessage: positionMessage,
-                allCriteriaMet: false,
-                isCentered: false,
-                isCorrectDistance: true,
-                isAxesAligned: false,
-                isCompletelyWithinOval: false,
-                bypassOvalCheck: bypassOvalCheck
-            })
-
-            setStableFramesCount(0)
-            if (progressIntervalRef.current) {
-                clearInterval(progressIntervalRef.current)
-                progressIntervalRef.current = null
-            }
-            return
-        }
-
-        // 3. Check: Are axes aligned?
-        const faceAlignment: FaceAlignment = {
-            centerX: idealCenterX,
-            centerY: idealCenterY,
-            radiusX,
-            radiusY,
-            roll: 0,
-            leftPupil: { x: landmarks[133]?.x || 0, y: landmarks[133]?.y || 0 }, // Sử dụng khóe mắt trái trong
-            rightPupil: { x: landmarks[362]?.x || 0, y: landmarks[362]?.y || 0 }, // Sử dụng khóe mắt phải trong
-            noseTip: { x: landmarks[1]?.x || 0, y: landmarks[1]?.y || 0 }
-        }
-
-        const dimensions: ImageDimensions = {
-            width: videoWidth,
-            height: videoHeight
-        }
-
-        // Check both X (eyes) and Y (nose) alignment
-        const eyesAlignment = checkEyesAlignment(landmarks)
-        const noseAlignment = checkNoseAlignment(landmarks)
-
-        const isAxesAligned =
-            eyesAlignment && noseAlignment && landmarks.length >= 474
-                ? isFaceAlignedWithFixedAxes(faceAlignment, dimensions, facingMode === 'user')
-                : false
-
-        // Get alignment status from checkFixedAxesAlignment helper
-        const { bothPupilsAligned, noseAligned } = checkFixedAxesAlignment(
-            landmarks,
-            idealCenterX,
-            idealCenterY,
-            radiusY,
-            videoWidth,
-            videoHeight,
-            facingMode === 'user'
-        )
-
-        // Face axes are not aligned properly, provide guidance
-        if (!bothPupilsAligned || !noseAligned) {
-            const isHorizontalAxisActive = bothPupilsAligned
-            const isVerticalAxisActive = noseAligned
-
-            let guidanceMessage = ''
-
-            if (!isVerticalAxisActive) {
-                // Căn chỉnh trục Y (sống mũi) trước
-                if (landmarks[1]) {
-                    const nose = landmarks[1]
-                    const noseX = facingMode === 'user' ? (1 - nose.x) * videoWidth : nose.x * videoWidth
-                    const diffFromCenter = noseX - idealCenterX
-
-                    // Độ lệch trái phải của mũi so với trung tâm - thêm thông tin chi tiết hơn
-                    if (diffFromCenter > 10) {
-                        guidanceMessage = '← Nghiêng phải nhẹ ' + Math.round(diffFromCenter) + 'px'
-                    } else if (diffFromCenter < -10) {
-                        guidanceMessage = '→ Nghiêng trái nhẹ ' + Math.round(Math.abs(diffFromCenter)) + 'px'
-                    } else {
-                        guidanceMessage = '↕ Giữ sống mũi thẳng, chưa đủ chính xác'
-                    }
-                } else {
-                    guidanceMessage = '↕ Căn chỉnh sống mũi thẳng 100%'
-                }
-            } else if (!isHorizontalAxisActive) {
-                // Sau khi sống mũi đã thẳng, căn chỉnh trục X (mắt)
-                if (landmarks[133] && landmarks[362]) {
-                    const leftInnerCorner = landmarks[133] // Khóe mắt trái trong
-                    const rightInnerCorner = landmarks[362] // Khóe mắt phải trong
-                    const innerCornerYDiff = Math.abs(leftInnerCorner.y - rightInnerCorner.y) * videoHeight
-
-                    if (leftInnerCorner.y > rightInnerCorner.y) {
-                        guidanceMessage = '↺ Nghiêng trái nhẹ ' + Math.round(innerCornerYDiff) + 'px'
-                    } else if (leftInnerCorner.y < rightInnerCorner.y) {
-                        guidanceMessage = '↻ Nghiêng phải nhẹ ' + Math.round(innerCornerYDiff) + 'px'
-                    } else {
-                        guidanceMessage = '✦ Giữ mắt ngang, chưa đủ chính xác'
-                    }
-                } else {
-                    guidanceMessage = '✦ Căn chỉnh mắt ngang 100%'
-                }
-            } else if (!checkFaceCentered(landmarks)) {
-                guidanceMessage = '⊕ Vào giữ khung hình'
-            } else {
-                guidanceMessage = '✦ Tinh chỉnh lại khuôn mặt'
-            }
-
-            setGuidance({
-                isDetected: true,
-                tiltMessage: guidanceMessage,
-                allCriteriaMet: false,
-                isCentered: true,
-                isCorrectDistance: true,
-                isAxesAligned: true,
-                isCompletelyWithinOval: isCompletelyWithinOuterOval,
-                bypassOvalCheck: bypassOvalCheck,
-                bothPupilsAligned,
-                noseAligned
-            })
-            setStableFramesCount(0)
-            if (progressIntervalRef.current) {
-                clearInterval(progressIntervalRef.current)
-                progressIntervalRef.current = null
-            }
-            return
-        }
-
-        // All checks pass - perfect alignment
-        const allLandmarksDetected =
-            landmarks[133] &&
-            landmarks[362] && // Hai khóe mắt trong
-            landmarks[1] &&
-            landmarks[168]
-
-        // Sử dụng các hàm kiểm tra đã được cải thiện
-        const isHorizontalAxisActive = checkEyesAlignment(landmarks)
-        const isVerticalAxisActive = checkNoseAlignment(landmarks)
-
-        // Determine if the face is in a stable position
-        const isStable = stableFramesCount >= STABILITY_THRESHOLD
-
-        // Fast track stability for perfectly aligned faces
-        if (isHorizontalAxisActive && isVerticalAxisActive && !isStable) {
-            setStableFramesCount(STABILITY_THRESHOLD)
-        } else if (isHorizontalAxisActive && isVerticalAxisActive) {
-            // Already stable and still aligned - do nothing
-        } else {
-            // Not aligned - reset stability
-            setStableFramesCount(0)
-        }
-
-        // Use alignment results for further processing
-        const facePerfectlyAligned =
-            isCompletelyWithinOuterOval &&
-            allLandmarksDetected &&
-            isAxesAligned &&
-            bothPupilsAligned &&
-            noseAligned
-
-        // Check if both X and Y axes are active
-        const bothAxesActive = isHorizontalAxisActive && isVerticalAxisActive
-
-        // Only update guidance state if there's a meaningful change
-        setGuidance((prevGuidance) => {
-            // Skip update if most critical states are the same
-            if (
-                prevGuidance.isDetected === true &&
-                prevGuidance.bothPupilsAligned === bothPupilsAligned &&
-                prevGuidance.noseAligned === noseAligned &&
-                prevGuidance.isCompletelyWithinOval === isCompletelyWithinOuterOval &&
-                prevGuidance.allCriteriaMet === facePerfectlyAligned
-            ) {
-                return prevGuidance
-            }
-
-            return {
-                isDetected: true,
-                tiltMessage: isCompletelyWithinOuterOval
-                    ? bothPupilsAligned && noseAligned
-                        ? 'Khuôn mặt đã chuẩn 100%'
-                        : 'Hoàn hảo! Giữ nguyên tư thế'
-                    : 'Giữ khuôn mặt nằm trong khung hình',
-                allCriteriaMet: facePerfectlyAligned,
-                isCentered: true,
-                isCorrectDistance: true,
-                isAxesAligned: true,
-                isCompletelyWithinOval: isCompletelyWithinOuterOval,
-                bypassOvalCheck: bypassOvalCheck,
-                bothPupilsAligned: bothPupilsAligned,
-                noseAligned: noseAligned
-            }
-        })
-
-        // Auto capture logic - start countdown when both axes are active and hasn't been captured yet
-        if (bothAxesActive && isStable && !isCapturing && !isAutoCapturing && !autoCaptureDoneRef.current) {
-            console.log('=== CAMERA: KHUÔN MẶT ĐÃ CHUẨN (TRỤC X VÀ Y ACTIVE) - BẮT ĐẦU TIẾN TRÌNH ===')
-            setIsCapturing(true)
-            setIsAutoCapturing(true)
-            setCaptureProgress(0)
-            captureStartTimeRef.current = performance.now()
-
-            // Bắt đầu animation tiến trình
-            const animateProgress = (timestamp: number) => {
-                if (!captureStartTimeRef.current) return
-
-                const elapsed = timestamp - captureStartTimeRef.current
-                const duration = 500 // 500ms for faster capture
-                const progress = Math.min(100, (elapsed / duration) * 100)
-
-                requestAnimationFrame(() => {
-                    setCaptureProgress(progress)
+                // Khuôn mặt không nằm đủ trong khung
+                setGuidance({
+                    isDetected: true,
+                    tiltMessage: positionMessage,
+                    allCriteriaMet: false,
+                    isCentered: false,
+                    isCorrectDistance: true,
+                    isAxesAligned: false,
+                    isCompletelyWithinOval: false,
+                    bypassOvalCheck: bypassOvalCheck
                 })
 
-                if (progress < 100) {
-                    captureAnimationRef.current = requestAnimationFrame(animateProgress)
-                } else {
-                    captureImage()
-                    setIsCapturing(false)
-                    setCaptureProgress(0)
-                    captureStartTimeRef.current = null
+                setStableFramesCount(0)
+                if (progressIntervalRef.current) {
+                    clearInterval(progressIntervalRef.current)
+                    progressIntervalRef.current = null
                 }
+                return
             }
 
-            captureAnimationRef.current = requestAnimationFrame(animateProgress)
-        } else if (shouldCapture && !autoCaptureDoneRef.current && !isCapturing) {
-            console.log(
-                '=== CAMERA: CHỜ KHUÔN MẶT CHUẨN === \nTrục X active:',
-                isHorizontalAxisActive,
-                '\nTrục Y active:',
-                isVerticalAxisActive
-            )
-            if (progressIntervalRef.current) {
-                clearInterval(progressIntervalRef.current)
-                progressIntervalRef.current = null
+            // 3. Check: Are axes aligned?
+            const faceAlignment: FaceAlignment = {
+                centerX: idealCenterX,
+                centerY: idealCenterY,
+                radiusX,
+                radiusY,
+                roll: 0,
+                leftPupil: { x: landmarks[133]?.x || 0, y: landmarks[133]?.y || 0 }, // Sử dụng khóe mắt trái trong
+                rightPupil: { x: landmarks[362]?.x || 0, y: landmarks[362]?.y || 0 }, // Sử dụng khóe mắt phải trong
+                noseTip: { x: landmarks[1]?.x || 0, y: landmarks[1]?.y || 0 }
             }
+
+            const dimensions: ImageDimensions = {
+                width: videoWidth,
+                height: videoHeight
+            }
+
+            // Check both X (eyes) and Y (nose) alignment
+            const eyesAlignment = checkEyesAlignment(landmarks)
+            const noseAlignment = checkNoseAlignment(landmarks)
+
+            const isAxesAligned =
+                eyesAlignment && noseAlignment && landmarks.length >= 474
+                    ? isFaceAlignedWithFixedAxes(faceAlignment, dimensions, facingMode === 'user')
+                    : false
+
+            // Get alignment status from checkFixedAxesAlignment helper
+            const { bothPupilsAligned, noseAligned } = checkFixedAxesAlignment(
+                landmarks,
+                idealCenterX,
+                idealCenterY,
+                radiusY,
+                videoWidth,
+                videoHeight,
+                facingMode === 'user'
+            )
+
+            // Face axes are not aligned properly, provide guidance
+            if (!bothPupilsAligned || !noseAligned) {
+                const isHorizontalAxisActive = bothPupilsAligned
+                const isVerticalAxisActive = noseAligned
+
+                let guidanceMessage = ''
+
+                if (!isVerticalAxisActive) {
+                    // Căn chỉnh trục Y (sống mũi) trước
+                    if (landmarks[1]) {
+                        const nose = landmarks[1]
+                        const noseX = facingMode === 'user' ? (1 - nose.x) * videoWidth : nose.x * videoWidth
+                        const diffFromCenter = noseX - idealCenterX
+
+                        // Độ lệch trái phải của mũi so với trung tâm - thêm thông tin chi tiết hơn
+                        if (diffFromCenter > 10) {
+                            guidanceMessage = '← Nghiêng phải nhẹ ' + Math.round(diffFromCenter) + 'px'
+                        } else if (diffFromCenter < -10) {
+                            guidanceMessage = '→ Nghiêng trái nhẹ ' + Math.round(Math.abs(diffFromCenter)) + 'px'
+                        } else {
+                            guidanceMessage = '↕ Giữ sống mũi thẳng, chưa đủ chính xác'
+                        }
+                    } else {
+                        guidanceMessage = '↕ Căn chỉnh sống mũi thẳng 100%'
+                    }
+                } else if (!isHorizontalAxisActive) {
+                    // Sau khi sống mũi đã thẳng, căn chỉnh trục X (mắt)
+                    if (landmarks[133] && landmarks[362]) {
+                        const leftInnerCorner = landmarks[133] // Khóe mắt trái trong
+                        const rightInnerCorner = landmarks[362] // Khóe mắt phải trong
+                        const innerCornerYDiff = Math.abs(leftInnerCorner.y - rightInnerCorner.y) * videoHeight
+
+                        if (leftInnerCorner.y > rightInnerCorner.y) {
+                            guidanceMessage = '↺ Nghiêng trái nhẹ ' + Math.round(innerCornerYDiff) + 'px'
+                        } else if (leftInnerCorner.y < rightInnerCorner.y) {
+                            guidanceMessage = '↻ Nghiêng phải nhẹ ' + Math.round(innerCornerYDiff) + 'px'
+                        } else {
+                            guidanceMessage = '✦ Giữ mắt ngang, chưa đủ chính xác'
+                        }
+                    } else {
+                        guidanceMessage = '✦ Căn chỉnh mắt ngang 100%'
+                    }
+                } else if (!checkFaceCentered(landmarks)) {
+                    guidanceMessage = '⊕ Vào giữ khung hình'
+                } else {
+                    guidanceMessage = '✦ Tinh chỉnh lại khuôn mặt'
+                }
+
+                setGuidance({
+                    isDetected: true,
+                    tiltMessage: guidanceMessage,
+                    allCriteriaMet: false,
+                    isCentered: true,
+                    isCorrectDistance: true,
+                    isAxesAligned: true,
+                    isCompletelyWithinOval: isCompletelyWithinOuterOval,
+                    bypassOvalCheck: bypassOvalCheck,
+                    bothPupilsAligned,
+                    noseAligned
+                })
+                setStableFramesCount(0)
+                if (progressIntervalRef.current) {
+                    clearInterval(progressIntervalRef.current)
+                    progressIntervalRef.current = null
+                }
+                return
+            }
+
+            // All checks pass - perfect alignment
+            const allLandmarksDetected =
+                landmarks[133] &&
+                landmarks[362] && // Hai khóe mắt trong
+                landmarks[1] &&
+                landmarks[168]
+
+            // Sử dụng các hàm kiểm tra đã được cải thiện
+            const isHorizontalAxisActive = checkEyesAlignment(landmarks)
+            const isVerticalAxisActive = checkNoseAlignment(landmarks)
+
+            // Determine if the face is in a stable position
+            const isStable = stableFramesCount >= STABILITY_THRESHOLD
+
+            // Fast track stability for perfectly aligned faces
+            if (isHorizontalAxisActive && isVerticalAxisActive && !isStable) {
+                setStableFramesCount(STABILITY_THRESHOLD)
+            } else if (isHorizontalAxisActive && isVerticalAxisActive) {
+                // Already stable and still aligned - do nothing
+            } else {
+                // Not aligned - reset stability
+                setStableFramesCount(0)
+            }
+
+            // Use alignment results for further processing
+            const facePerfectlyAligned =
+                isCompletelyWithinOuterOval &&
+                allLandmarksDetected &&
+                isAxesAligned &&
+                bothPupilsAligned &&
+                noseAligned
+
+            // Check if both X and Y axes are active
+            const bothAxesActive = isHorizontalAxisActive && isVerticalAxisActive
+
+            // Only update guidance state if there's a meaningful change
+            setGuidance((prevGuidance) => {
+                // Skip update if most critical states are the same
+                if (
+                    prevGuidance.isDetected === true &&
+                    prevGuidance.bothPupilsAligned === bothPupilsAligned &&
+                    prevGuidance.noseAligned === noseAligned &&
+                    prevGuidance.isCompletelyWithinOval === isCompletelyWithinOuterOval &&
+                    prevGuidance.allCriteriaMet === facePerfectlyAligned
+                ) {
+                    return prevGuidance
+                }
+
+                return {
+                    isDetected: true,
+                    tiltMessage: isCompletelyWithinOuterOval
+                        ? bothPupilsAligned && noseAligned
+                            ? 'Khuôn mặt đã chuẩn 100%'
+                            : 'Hoàn hảo! Giữ nguyên tư thế'
+                        : 'Giữ khuôn mặt nằm trong khung hình',
+                    allCriteriaMet: facePerfectlyAligned,
+                    isCentered: true,
+                    isCorrectDistance: true,
+                    isAxesAligned: true,
+                    isCompletelyWithinOval: isCompletelyWithinOuterOval,
+                    bypassOvalCheck: bypassOvalCheck,
+                    bothPupilsAligned: bothPupilsAligned,
+                    noseAligned: noseAligned
+                }
+            })
+
+            // Auto capture logic - start countdown when both axes are active and hasn't been captured yet
+            if (bothAxesActive && isStable && !isCapturing && !isAutoCapturing && !autoCaptureDoneRef.current) {
+                console.log('=== CAMERA: KHUÔN MẶT ĐÃ CHUẨN (TRỤC X VÀ Y ACTIVE) - BẮT ĐẦU TIẾN TRÌNH ===')
+                setIsCapturing(true)
+                setIsAutoCapturing(true)
+                setCaptureProgress(0)
+                captureStartTimeRef.current = performance.now()
+
+                // Bắt đầu animation tiến trình
+                const animateProgress = (timestamp: number) => {
+                    if (!captureStartTimeRef.current) return
+
+                    const elapsed = timestamp - captureStartTimeRef.current
+                    const duration = 500 // 500ms for faster capture
+                    const progress = Math.min(100, (elapsed / duration) * 100)
+
+                    requestAnimationFrame(() => {
+                        setCaptureProgress(progress)
+                    })
+
+                    if (progress < 100) {
+                        captureAnimationRef.current = requestAnimationFrame(animateProgress)
+                    } else {
+                        captureImage()
+                        setIsCapturing(false)
+                        setCaptureProgress(0)
+                        captureStartTimeRef.current = null
+                    }
+                }
+
+                captureAnimationRef.current = requestAnimationFrame(animateProgress)
+            } else if (shouldCapture && !autoCaptureDoneRef.current && !isCapturing) {
+                console.log(
+                    '=== CAMERA: CHỜ KHUÔN MẶT CHUẨN === \nTrục X active:',
+                    isHorizontalAxisActive,
+                    '\nTrục Y active:',
+                    isVerticalAxisActive
+                )
+                if (progressIntervalRef.current) {
+                    clearInterval(progressIntervalRef.current)
+                    progressIntervalRef.current = null
+                }
+            }
+        } finally {
+            isProcessingFrameRef.current = false
         }
-    } finally {
-        isProcessingFrameRef.current = false
-    }
-}, [detector, landmarker, stableFramesCount, captureImage, shouldCapture, isAutoCapturing, facingMode])
+    }, [detector, landmarker, stableFramesCount, captureImage, shouldCapture, isAutoCapturing, facingMode])
 
     // Manage frame processing with improved throttling
     useEffect(() => {
@@ -1170,7 +1199,8 @@ export default function AIFaceWebcam({
                             isWithinGuide: true,
                             isCorrectDistance: true,
                             isAxesAligned,
-                            facingMode
+                            facingMode,
+                            isLaptop
                         })
                     } else {
                         // If no face is detected yet, draw the default inactive axes
@@ -1190,7 +1220,8 @@ export default function AIFaceWebcam({
                             [],
                             true,
                             false,
-                            facingMode === 'user'
+                            facingMode === 'user',
+                            isLaptop
                         )
                     }
                 }
@@ -1291,13 +1322,17 @@ export default function AIFaceWebcam({
                 }}
             >
                 {/* Left Panel - Photo Guide */}
-                <div className='flex-1 h-[100dvh] overflow-hidden px-4 hidden md:block'>
+                <div className='flex-[1.3] h-[100dvh] overflow-hidden px-2 hidden md:block'>
                     <PhotoGuidePanel />
                 </div>
 
                 {/* Center - Webcam */}
                 <div
-                    className='relative overflow-hidden border-0 md:border md:border-cyan-100 shadow-none md:shadow-xl mx-auto flex flex-col h-[100dvh] md:h-auto w-full md:w-auto bg-[#080c14] md:bg-transparent'
+                    className={`relative overflow-hidden border-0 transition-all duration-500 mx-auto flex flex-col h-[100dvh] md:h-auto w-full md:w-auto bg-[#080c14] md:bg-transparent ${
+                        (guidance.bothPupilsAligned && guidance.noseAligned)
+                            ? 'shadow-[0_0_40px_10px_rgba(0,255,65,0.35)]'
+                            : 'shadow-[0_0_30px_8px_rgba(239,68,68,0.07)]'
+                    }`}
                     style={{ display: isStartingCapture || isProcessingCapture || isSavingData ? 'none' : 'block' }}
                     onDoubleClick={() => {
                         // Only trigger if not already capturing and face is detected
@@ -1333,223 +1368,52 @@ export default function AIFaceWebcam({
                             className='webcam-view'
                         />
 
-                        {/* Floating overlay Back button - Desktop/Tablet Only */}
-                        <button
-                            onClick={() => navigate(-1)}
-                            className='absolute top-4 left-4 z-50 w-10 h-10 rounded-full bg-black/45 backdrop-blur-sm border border-white/20 hidden md:flex items-center justify-center text-white active:scale-95 transition-all shadow-lg'
-                            title='Quay lại'
-                        >
-                            <ArrowLeft className='w-5 h-5' strokeWidth={2.5} />
-                        </button>
+                        {/* Dynamic alignment soft inset shadow vignette overlay - active on all devices including iPad & Mobile */}
+                        <div
+                            className={`absolute inset-0 pointer-events-none z-30 transition-all duration-500 ${
+                                (guidance.bothPupilsAligned && guidance.noseAligned)
+                                    ? 'shadow-[inset_0_0_50px_12px_rgba(0,255,65,0.45)]'
+                                    : 'shadow-[inset_0_0_40px_8px_rgba(239,68,68,0.12)]'
+                            }`}
+                        />
 
-                        {/* Floating overlay Switch camera button - Desktop/Tablet Only */}
-                        <button
-                            onClick={toggleCamera}
-                            className='absolute top-4 right-4 z-50 w-10 h-10 rounded-full bg-black/45 backdrop-blur-sm border border-white/20 hidden md:flex items-center justify-center text-white active:scale-95 transition-all shadow-lg'
-                            title='Đổi camera'
-                        >
-                            <RefreshCw className='w-5 h-5' strokeWidth={2.5} />
-                        </button>
+
                     </div>
 
-                    {/* Countdown animation when capturing - Enhanced Style */}
+                    {/* Countdown animation when capturing - Minimalist Premium Style */}
                     {isCapturing && captureProgress < 100 && (
                         <div
-                            className='absolute inset-0 flex items-center justify-center z-40'
-                            style={{
-                                animation: 'captureEnter 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
-                                background: 'radial-gradient(circle, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 100%)'
-                            }}
+                            className='absolute inset-0 flex flex-col items-center justify-center z-40 bg-transparent transition-all duration-300'
                         >
-                            {/* Ripple effect background */}
-                            <div className='absolute inset-0 flex items-center justify-center'>
-                                <div
-                                    className='absolute w-32 h-32 rounded-full border-2 border-green-400/20'
-                                    style={{
-                                        animation: 'ripple 2s infinite ease-out',
-                                        animationDelay: '0s'
-                                    }}
-                                ></div>
-                                <div
-                                    className='absolute w-48 h-48 rounded-full border border-green-400/10'
-                                    style={{
-                                        animation: 'ripple 2s infinite ease-out',
-                                        animationDelay: '0.5s'
-                                    }}
-                                ></div>
-                                <div
-                                    className='absolute w-64 h-64 rounded-full border border-green-400/5'
-                                    style={{
-                                        animation: 'ripple 2s infinite ease-out',
-                                        animationDelay: '1s'
-                                    }}
-                                ></div>
-                            </div>
-
-                            <div className='relative'>
-                                {/* Outer glow ring */}
-                                <div
-                                    className='absolute inset-0 w-32 h-32 rounded-full'
-                                    style={{
-                                        background: 'conic-gradient(from 0deg, #10b981, #34d399, #6ee7b7, #10b981)',
-                                        animation: 'spin 3s linear infinite',
-                                        filter: 'blur(8px)',
-                                        opacity: 0.6
-                                    }}
-                                ></div>
-
-                                {/* Main progress container */}
-                                <div className='relative w-28 h-28 flex items-center justify-center'>
-                                    {/* Background circle with gradient */}
-                                    <svg
-                                        className='w-28 h-28 absolute'
-                                        viewBox='0 0 120 120'
-                                        style={{
-                                            filter: 'drop-shadow(0px 0px 10px rgba(139, 92, 246, 0.4))', // Drop shadow tím nhạt (Purple-500)
-                                            transform: `scale(${1 + Math.sin(Date.now() / 200) * 0.05})`,
-                                            transition: 'transform 0.2s ease-out'
-                                        }}
-                                    >
-                                        {/* Gradient definitions */}
-                                        <defs>
-                                            <linearGradient id='progressGradient' x1='0%' y1='0%' x2='100%' y2='100%'>
-                                                <stop offset='0%' stopColor='#3B82F6' />
-                                                <stop offset='50%' stopColor='#8B5CF6' />
-                                                <stop offset='100%' stopColor='#D8B4FE' />
-                                            </linearGradient>
-                                            <filter id='glow'>
-                                                <feGaussianBlur stdDeviation='4' result='coloredBlur' />
-                                                <feMerge>
-                                                    <feMergeNode in='coloredBlur' />
-                                                    <feMergeNode in='SourceGraphic' />
-                                                </feMerge>
-                                            </filter>
-                                        </defs>
-
-                                        {/* Background track */}
-                                        <circle
-                                            cx='60'
-                                            cy='60'
-                                            r='50'
-                                            fill='none'
-                                            strokeWidth='3'
-                                            stroke='rgba(203, 213, 225, 0.15)'
-                                        />
-
-                                        {/* Progress circle with gradient */}
-                                        <circle
-                                            cx='60'
-                                            cy='60'
-                                            r='50'
-                                            fill='none'
-                                            strokeWidth='5'
-                                            stroke='url(#progressGradient)'
-                                            strokeLinecap='round'
-                                            strokeDasharray={`${2 * Math.PI * 50}`}
-                                            strokeDashoffset={`${2 * Math.PI * 50 * (1 - captureProgress / 100)}`}
-                                            transform='rotate(-90 60 60)'
-                                            filter='url(#glow)'
-                                            style={{
-                                                transition: 'stroke-dashoffset 0.1s cubic-bezier(0.4, 0, 0.2, 1)',
-                                                willChange: 'stroke-dashoffset'
-                                            }}
-                                        />
-
-                                        {/* Inner decorative circle */}
-                                        <circle
-                                            cx='60'
-                                            cy='60'
-                                            r='35'
-                                            fill='rgba(59, 130, 246, 0.1)'
-                                            strokeWidth='1'
-                                            style={{
-                                                animation: 'pulse 1.5s ease-in-out infinite alternate'
-                                            }}
-                                        />
-                                    </svg>
-                                    {/* Center content */}
-                                    <div className='absolute inset-0 flex flex-col items-center justify-center'>
-                                        {/* Camera icon */}
-                                        <div
-                                            className='mb-1'
-                                            style={{
-                                                animation: 'bounce 0.6s ease-in-out infinite alternate'
-                                            }}
-                                        >
-                                            <svg
-                                                width='24'
-                                                height='24'
-                                                viewBox='0 0 24 24'
-                                                fill='none'
-                                                xmlns='http://www.w3.org/2000/svg'
-                                            >
-                                                <path
-                                                    d='M12 15.5C13.933 15.5 15.5 13.933 15.5 12C15.5 10.067 13.933 8.5 12 8.5C10.067 8.5 8.5 10.067 8.5 12C8.5 13.933 10.067 15.5 12 15.5Z'
-                                                    stroke='white'
-                                                    strokeWidth='1.5'
-                                                    fill='rgba(255,255,255,0.8)'
-                                                />
-                                                <path
-                                                    d='M3 16.5V9C3 7.343 4.343 6 6 6H7.5L9 4H15L16.5 6H18C19.657 6 21 7.343 21 9V16.5C21 18.157 19.657 19.5 18 19.5H6C4.343 19.5 3 18.157 3 16.5Z'
-                                                    stroke='white'
-                                                    strokeWidth='1.5'
-                                                    fill='none'
-                                                />
-                                            </svg>
-                                        </div>
-
-                                        {/* Progress text */}
-                                        <div className='text-white font-bold text-xs tracking-wider'>
-                                            {Math.round(captureProgress)}%
-                                        </div>
-                                    </div>
+                            <div className='flex flex-col items-center justify-center space-y-4'>
+                                {/* Outer double rotating ring spinner (minimalist) */}
+                                <div className='relative w-16 h-16 flex items-center justify-center drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]'>
+                                    {/* Spinner Arc 1 */}
+                                    <div className='absolute inset-0 border-2 border-t-cyan-400 border-r-cyan-400 border-b-transparent border-l-transparent rounded-full animate-spin' style={{ animationDuration: '0.8s' }} />
+                                    {/* Spinner Arc 2 */}
+                                    <div className='absolute inset-0.5 border border-b-white/80 border-l-white/80 border-t-transparent border-r-transparent rounded-full animate-spin' style={{ animationDuration: '1.2s', animationDirection: 'reverse' }} />
+                                    {/* Center core pulse */}
+                                    <div className='w-2 h-2 bg-cyan-400 rounded-full animate-ping' />
                                 </div>
 
-                                {/* Floating particles */}
-                                <div className='absolute inset-0 pointer-events-none'>
-                                    {[...Array(8)].map((_, i) => (
-                                        <div
-                                            key={i}
-                                            className='absolute w-1 h-1 bg-green-400 rounded-full opacity-60'
-                                            style={{
-                                                left: `${50 + 40 * Math.cos((i * Math.PI) / 4)}%`,
-                                                top: `${50 + 40 * Math.sin((i * Math.PI) / 4)}%`,
-                                                animation: `particle${i} 2s ease-in-out infinite`,
-                                                animationDelay: `${i * 0.2}s`
-                                            }}
-                                        ></div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Bottom text */}
-                            <div className='absolute bottom-20 left-1/2 transform -translate-x-1/2'>
-                                <div className='text-white text-center capture-text'>
-                                    <div className='text-lg font-semibold mb-1'>Đang chụp hình</div>
-                                    <div className='text-sm text-green-300 opacity-80'>Giữ nguyên tư thế...</div>
+                                {/* Text & Percentage */}
+                                <div className='text-center space-y-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]'>
+                                    <p className='text-[11px] font-bold tracking-[0.25em] text-white uppercase'>
+                                        Đang chụp ảnh
+                                    </p>
+                                    <p className='text-lg font-bold tracking-widest text-cyan-400'>
+                                        {Math.round(captureProgress)}%
+                                    </p>
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    {/* Mobile Only: Beautiful Wavy bottom dock with control buttons */}
-                    <div className='absolute bottom-0 left-0 w-full bg-transparent flex flex-col items-center md:hidden select-none z-20 pb-0 pointer-events-none'>
+                    {/* Bottom dock with control buttons (visible on all screens) */}
+                    <div className='absolute bottom-0 left-0 w-full bg-transparent flex flex-col items-center select-none z-20 pb-0 pointer-events-none'>
 
-                        {/* Wavy bottom background container */}
-                        <div className='relative w-full bg-[#080c14] flex flex-col items-center pt-4 pb-14 pointer-events-auto'>
-                            {/* Wavy SVG border at the top of the container */}
-                            <div className='absolute top-0 left-0 w-full overflow-hidden leading-[0] transform translate-y-[-99%] pointer-events-none'>
-                                <svg
-                                    className='relative block w-full h-[28px]'
-                                    viewBox='0 0 1200 120'
-                                    preserveAspectRatio='none'
-                                >
-                                    <path
-                                        d='M0,60 C150,100 350,20 500,60 C650,100 850,20 1000,60 C1100,80 1150,80 1200,60 L1200,120 L0,120 Z'
-                                        fill='#080c14'
-                                    />
-                                </svg>
-                            </div>
+                        {/* Bottom background container - Completely transparent to show webcam feed directly */}
+                        <div className='relative w-full bg-transparent flex flex-col items-center pt-4 pb-14 pointer-events-auto'>
 
                             {/* Control row with back, capture, and switch camera buttons */}
                             <div className='flex items-center justify-between w-full max-w-[300px] px-2 z-10'>
@@ -1575,14 +1439,18 @@ export default function AIFaceWebcam({
                                     <div className='w-12 h-12 rounded-full bg-white shadow-[inset_0_0_6px_rgba(0,0,0,0.15)]'></div>
                                 </button>
 
-                                {/* Right: Switch Camera Button */}
-                                <button
-                                    onClick={toggleCamera}
-                                    className='w-11 h-11 rounded-full bg-[#0a0f1d]/60 backdrop-blur-md border border-white/10 active:bg-white/20 flex items-center justify-center text-white active:scale-90 transition-all shadow-lg'
-                                    title='Đổi camera'
-                                >
-                                    <RefreshCw className='w-5 h-5 text-white' strokeWidth={2.5} />
-                                </button>
+                                {/* Right: Switch Camera Button or empty placeholder to maintain layout balance */}
+                                {isLaptop ? (
+                                    <div className='w-11 h-11' />
+                                ) : (
+                                    <button
+                                        onClick={toggleCamera}
+                                        className='w-11 h-11 rounded-full bg-[#0a0f1d]/60 backdrop-blur-md border border-white/10 active:bg-white/20 flex items-center justify-center text-white active:scale-90 transition-all shadow-lg'
+                                        title='Đổi camera'
+                                    >
+                                        <RefreshCw className='w-5 h-5 text-white' strokeWidth={2.5} />
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -1590,7 +1458,7 @@ export default function AIFaceWebcam({
                 </div>
 
                 {/* Right Panel - Process Panel */}
-                <div className='flex-1 h-[100dvh] overflow-hidden px-4 hidden md:block'>
+                <div className='flex-[1.3] h-[100dvh] overflow-hidden px-2 hidden md:block'>
                     <ProcessPanel activeStep={1} />
                 </div>
             </div>
@@ -2023,9 +1891,18 @@ function drawFixedGuidanceAxes(
     landmarks: NormalizedLandmark[] = [],
     isCorrectDistance: boolean = true, // Change default to true
     isWithinGuide: boolean = true, // Add parameter to control point visibility
-    isMirrored: boolean = true
+    isMirrored: boolean = true,
+    isLaptop: boolean = false
 ): { bothPupilsAligned: boolean; noseAligned: boolean } {
     ctx.save()
+
+    const scale = isLaptop ? 0.6 : 1.0
+    const lineWidthActive = STYLE.ACTIVE.LINE_WIDTH * scale
+    const lineWidthInactive = STYLE.INACTIVE.LINE_WIDTH * scale
+    const pointSizeActive = STYLE.ACTIVE.POINT_SIZE * scale
+    const pointSizeInactive = STYLE.INACTIVE.POINT_SIZE * scale
+    const centerPointSize = STYLE.ACTIVE.CENTER_POINT_SIZE * scale
+    const labelFontSize = isLaptop ? 18 : 26
 
     // Vị trí trục X ngang tầm mắt
     const eyeLevel = centerY - radiusY * 0.3 - 15
@@ -2071,13 +1948,13 @@ function drawFixedGuidanceAxes(
     ctx.beginPath()
     if (shouldActivateNose) {
         ctx.strokeStyle = COLORS.ACTIVE.NOSE_AXIS
-        ctx.lineWidth = STYLE.ACTIVE.LINE_WIDTH
+        ctx.lineWidth = lineWidthActive
         ctx.shadowColor = COLORS.SHADOW.NOSE_AXIS
         ctx.shadowBlur = STYLE.ACTIVE.SHADOW_BLUR
         ctx.setLineDash([])
     } else {
         ctx.strokeStyle = COLORS.INACTIVE.AXIS
-        ctx.lineWidth = STYLE.INACTIVE.LINE_WIDTH
+        ctx.lineWidth = lineWidthInactive
         ctx.shadowBlur = STYLE.INACTIVE.SHADOW_BLUR
         ctx.setLineDash(STYLE.INACTIVE.LINE_DASH)
     }
@@ -2087,6 +1964,19 @@ function drawFixedGuidanceAxes(
     ctx.stroke()
     ctx.setLineDash([])
 
+    // Vẽ nhãn Y ở đỉnh trục dọc
+    ctx.save()
+    ctx.font = `bold ${labelFontSize}px sans-serif`
+    ctx.fillStyle = shouldActivateNose ? '#00FF41' : 'rgba(255, 255, 255, 0.5)'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'bottom'
+    if (shouldActivateNose) {
+        ctx.shadowColor = COLORS.SHADOW.NOSE_AXIS
+        ctx.shadowBlur = STYLE.ACTIVE.SHADOW_BLUR * scale
+    }
+    ctx.fillText('Y', centerX, eyeLevel - radiusY * 0.7 - 10 * scale)
+    ctx.restore()
+
     // Chỉ vẽ điểm mũi khi khuôn mặt đã nằm trong khung
     if (landmarks.length >= 474 && isWithinGuide) {
         const noseTip = landmarks[1]
@@ -2095,27 +1985,27 @@ function drawFixedGuidanceAxes(
 
         if (shouldActivateNose) {
             // Draw animated radiating ripple
-            drawRipple(ctx, noseTipX, noseTipY, STYLE.ACTIVE.POINT_SIZE * 1.3, 'rgba(0, 255, 65')
+            drawRipple(ctx, noseTipX, noseTipY, pointSizeActive * 1.3, 'rgba(0, 255, 65')
 
             ctx.beginPath()
             ctx.shadowColor = COLORS.SHADOW.NOSE_AXIS
             ctx.shadowBlur = STYLE.ACTIVE.SHADOW_BLUR
             ctx.fillStyle = COLORS.ACTIVE.NOSE_POINT
-            ctx.arc(noseTipX, noseTipY, STYLE.ACTIVE.POINT_SIZE, 0, Math.PI * 2)
+            ctx.arc(noseTipX, noseTipY, pointSizeActive, 0, Math.PI * 2)
             ctx.fill()
 
             ctx.beginPath()
             ctx.fillStyle = COLORS.CENTER_POINT
-            ctx.arc(noseTipX, noseTipY, STYLE.ACTIVE.CENTER_POINT_SIZE, 0, Math.PI * 2)
+            ctx.arc(noseTipX, noseTipY, centerPointSize, 0, Math.PI * 2)
             ctx.fill()
         } else {
             // Draw animated radiating ripple
-            drawRipple(ctx, noseTipX, noseTipY, STYLE.ACTIVE.POINT_SIZE * 1.3, 'rgba(239, 68, 68')
+            drawRipple(ctx, noseTipX, noseTipY, pointSizeActive * 1.3, 'rgba(239, 68, 68')
 
             ctx.beginPath()
             ctx.shadowBlur = STYLE.INACTIVE.SHADOW_BLUR
             ctx.fillStyle = '#ef4444' // Red color for nose point in inactive state
-            ctx.arc(noseTipX, noseTipY, STYLE.INACTIVE.POINT_SIZE, 0, Math.PI * 2)
+            ctx.arc(noseTipX, noseTipY, pointSizeInactive, 0, Math.PI * 2)
             ctx.fill()
         }
     }
@@ -2123,12 +2013,12 @@ function drawFixedGuidanceAxes(
     // Always draw the horizontal eye zone (X axis)
     if (shouldActivatePupils) {
         ctx.strokeStyle = COLORS.ACTIVE.EYE_AXIS
-        ctx.lineWidth = STYLE.ACTIVE.LINE_WIDTH
+        ctx.lineWidth = lineWidthActive
         ctx.shadowColor = COLORS.SHADOW.EYE_AXIS
         ctx.shadowBlur = STYLE.ACTIVE.SHADOW_BLUR
     } else {
         ctx.strokeStyle = COLORS.INACTIVE.AXIS
-        ctx.lineWidth = STYLE.INACTIVE.LINE_WIDTH
+        ctx.lineWidth = lineWidthInactive
         ctx.shadowBlur = STYLE.INACTIVE.SHADOW_BLUR
         ctx.setLineDash(STYLE.INACTIVE.LINE_DASH)
     }
@@ -2136,6 +2026,50 @@ function drawFixedGuidanceAxes(
     ctx.beginPath()
     ctx.moveTo(centerX - radiusX * 1.2, eyeLevel)
     ctx.lineTo(centerX + radiusX * 1.2, eyeLevel)
+    ctx.stroke()
+    ctx.setLineDash([])
+
+    // Vẽ nhãn X ở bên phải trục ngang
+    ctx.save()
+    ctx.font = `bold ${labelFontSize}px sans-serif`
+    ctx.fillStyle = shouldActivatePupils ? '#00FF41' : 'rgba(255, 255, 255, 0.5)'
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'middle'
+    if (shouldActivatePupils) {
+        ctx.shadowColor = COLORS.SHADOW.EYE_AXIS
+        ctx.shadowBlur = STYLE.ACTIVE.SHADOW_BLUR * scale
+    }
+    ctx.fillText('X', centerX + radiusX * 1.2 + 10 * scale, eyeLevel)
+    ctx.restore()
+
+    // Kẻ đường nét đứt từ 2 điểm đầu mút trục X xuống điểm cuối trục Y và lên đầu trục Y tạo thành hình thoi (4 tam giác đối xứng)
+    ctx.beginPath()
+    if (shouldActivateNose && shouldActivatePupils) {
+        ctx.strokeStyle = COLORS.ACTIVE.NOSE_AXIS
+        ctx.lineWidth = lineWidthActive
+        ctx.shadowColor = COLORS.SHADOW.NOSE_AXIS
+        ctx.shadowBlur = STYLE.ACTIVE.SHADOW_BLUR * scale
+    } else {
+        ctx.strokeStyle = COLORS.INACTIVE.AXIS
+        ctx.lineWidth = lineWidthInactive
+        ctx.shadowBlur = STYLE.INACTIVE.SHADOW_BLUR
+    }
+    ctx.setLineDash([4 * scale, 4 * scale])
+    
+    // 1. Đường nét đứt bên dưới (kết nối với cuối trục Y)
+    ctx.moveTo(centerX - radiusX * 1.2, eyeLevel)
+    ctx.lineTo(centerX, centerY + radiusY * 1.2)
+    
+    ctx.moveTo(centerX + radiusX * 1.2, eyeLevel)
+    ctx.lineTo(centerX, centerY + radiusY * 1.2)
+
+    // 2. Đường nét đứt bên trên (kết nối với đầu trục Y)
+    ctx.moveTo(centerX - radiusX * 1.2, eyeLevel)
+    ctx.lineTo(centerX, eyeLevel - radiusY * 0.7)
+    
+    ctx.moveTo(centerX + radiusX * 1.2, eyeLevel)
+    ctx.lineTo(centerX, eyeLevel - radiusY * 0.7)
+    
     ctx.stroke()
     ctx.setLineDash([])
 
@@ -2155,7 +2089,7 @@ function drawFixedGuidanceAxes(
         if (shouldActivatePupils && shouldActivateNose) {
             ctx.beginPath()
             ctx.strokeStyle = '#00FF41' // Glowing green for perfect connection
-            ctx.lineWidth = 5.5 // Prominent connection line (was 2.5, up from 4.5)
+            ctx.lineWidth = 5.5 * scale // Prominent connection line (was 2.5, up from 4.5)
             ctx.shadowColor = 'rgba(0, 255, 65, 0.6)'
             ctx.shadowBlur = 12 // Glowing blur (up from 8)
             ctx.lineJoin = 'round'
@@ -2174,18 +2108,18 @@ function drawFixedGuidanceAxes(
                 [rightInnerCornerX, rightInnerCornerY]
             ].forEach(([x, y]) => {
                 // Draw animated radiating ripple
-                drawRipple(ctx, x, y, STYLE.ACTIVE.POINT_SIZE * 1.3, 'rgba(0, 255, 65')
+                drawRipple(ctx, x, y, pointSizeActive * 1.3, 'rgba(0, 255, 65')
 
                 ctx.beginPath()
                 ctx.shadowColor = COLORS.SHADOW.EYE_AXIS
                 ctx.shadowBlur = STYLE.ACTIVE.SHADOW_BLUR
                 ctx.fillStyle = COLORS.ACTIVE.EYE_POINT
-                ctx.arc(x, y, STYLE.ACTIVE.POINT_SIZE, 0, Math.PI * 2)
+                ctx.arc(x, y, pointSizeActive, 0, Math.PI * 2)
                 ctx.fill()
 
                 ctx.beginPath()
                 ctx.fillStyle = COLORS.CENTER_POINT
-                ctx.arc(x, y, STYLE.ACTIVE.CENTER_POINT_SIZE, 0, Math.PI * 2)
+                ctx.arc(x, y, centerPointSize, 0, Math.PI * 2)
                 ctx.fill()
             })
         } else {
@@ -2194,12 +2128,12 @@ function drawFixedGuidanceAxes(
                 [rightInnerCornerX, rightInnerCornerY]
             ].forEach(([x, y]) => {
                 // Draw animated radiating ripple
-                drawRipple(ctx, x, y, STYLE.ACTIVE.POINT_SIZE * 1.3, 'rgba(239, 68, 68')
+                drawRipple(ctx, x, y, pointSizeActive * 1.3, 'rgba(239, 68, 68')
 
                 ctx.beginPath()
                 ctx.shadowBlur = STYLE.INACTIVE.SHADOW_BLUR
                 ctx.fillStyle = '#ef4444' // Red color for eye points in inactive state
-                ctx.arc(x, y, STYLE.INACTIVE.POINT_SIZE, 0, Math.PI * 2)
+                ctx.arc(x, y, pointSizeInactive, 0, Math.PI * 2)
                 ctx.fill()
             })
         }
@@ -2207,7 +2141,7 @@ function drawFixedGuidanceAxes(
         // Khi khuôn mặt chưa nằm trong khung, vẫn vẽ trục nhưng không vẽ điểm
         ctx.beginPath()
         ctx.strokeStyle = COLORS.INACTIVE.AXIS
-        ctx.lineWidth = STYLE.INACTIVE.LINE_WIDTH
+        ctx.lineWidth = lineWidthInactive
         ctx.shadowBlur = STYLE.INACTIVE.SHADOW_BLUR
         ctx.setLineDash(STYLE.INACTIVE.LINE_DASH)
         ctx.moveTo(centerX - radiusX * 1.2, eyeLevel)
@@ -2225,7 +2159,7 @@ function drawFixedGuidanceAxes(
     // Draw neon directions arrows for high-precision guidance
     if (landmarks.length >= 474 && isWithinGuide) {
         ctx.save()
-        ctx.lineWidth = 4.5 // Prominent arrow line width (was 3.0, up from 4.5)
+        ctx.lineWidth = 4.5 * scale // Prominent arrow line width (was 3.0, up from 4.5)
         ctx.strokeStyle = '#ffffff' // White color for guidance arrows
         ctx.fillStyle = '#ffffff' // White color for guidance arrows
         ctx.shadowColor = 'rgba(255, 255, 255, 0.4)' // Soft white shadow
@@ -2236,8 +2170,8 @@ function drawFixedGuidanceAxes(
             const noseTip = landmarks[1]
             const noseTipX = isMirrored ? (1 - noseTip.x) * ctx.canvas.width : noseTip.x * ctx.canvas.width
             const noseTipY = noseTip.y * ctx.canvas.height
-            const arrowLength = 40 // Large nose arrow length (was 30, up from 40)
-            const gapOffset = 26 // Large gap from nose tip center (was 22, up from 25)
+            const arrowLength = 40 * scale // Large nose arrow length (was 30, up from 40)
+            const gapOffset = 26 * scale // Large gap from nose tip center (was 22, up from 25)
 
             if (noseTipX > centerX + 12) {
                 // Nose is too far right (screen), draw arrow pointing LEFT towards center
@@ -2248,8 +2182,8 @@ function drawFixedGuidanceAxes(
 
                 ctx.beginPath()
                 ctx.moveTo(noseTipX - gapOffset - arrowLength, noseTipY)
-                ctx.lineTo(noseTipX - gapOffset - arrowLength + 14, noseTipY - 9) // Large head (was 11/7, up from 14/9)
-                ctx.lineTo(noseTipX - gapOffset - arrowLength + 14, noseTipY + 9)
+                ctx.lineTo(noseTipX - gapOffset - arrowLength + 14 * scale, noseTipY - 9 * scale) // Large head (was 11/7, up from 14/9)
+                ctx.lineTo(noseTipX - gapOffset - arrowLength + 14 * scale, noseTipY + 9 * scale)
                 ctx.closePath()
                 ctx.fill()
             } else if (noseTipX < centerX - 12) {
@@ -2261,8 +2195,8 @@ function drawFixedGuidanceAxes(
 
                 ctx.beginPath()
                 ctx.moveTo(noseTipX + gapOffset + arrowLength, noseTipY)
-                ctx.lineTo(noseTipX + gapOffset + arrowLength - 14, noseTipY - 9) // Large head (was 11/7, up from 14/9)
-                ctx.lineTo(noseTipX + gapOffset + arrowLength - 14, noseTipY + 9)
+                ctx.lineTo(noseTipX + gapOffset + arrowLength - 14 * scale, noseTipY - 9 * scale) // Large head (was 11/7, up from 14/9)
+                ctx.lineTo(noseTipX + gapOffset + arrowLength - 14 * scale, noseTipY + 9 * scale)
                 ctx.closePath()
                 ctx.fill()
             }
@@ -2276,8 +2210,8 @@ function drawFixedGuidanceAxes(
             const leftInnerCornerY = leftInnerCorner.y * ctx.canvas.height
             const rightInnerCornerX = isMirrored ? (1 - rightInnerCorner.x) * ctx.canvas.width : rightInnerCorner.x * ctx.canvas.width
             const rightInnerCornerY = rightInnerCorner.y * ctx.canvas.height
-            const arrowLength = 26 // Large eye arrow length (was 20, up from 25)
-            const offset = 28 // Large offset from eye center (was 24, up from 28)
+            const arrowLength = 26 * scale // Large eye arrow length (was 20, up from 25)
+            const offset = 28 * scale // Large offset from eye center (was 24, up from 28)
 
             // Left eye adjustment
             if (leftInnerCornerY > eyeLevel + 8) {
@@ -2289,8 +2223,8 @@ function drawFixedGuidanceAxes(
 
                 ctx.beginPath()
                 ctx.moveTo(leftInnerCornerX, leftInnerCornerY + offset - arrowLength)
-                ctx.lineTo(leftInnerCornerX - 9, leftInnerCornerY + offset - arrowLength + 9) // Large head (was 7/7, up from 9/9)
-                ctx.lineTo(leftInnerCornerX + 9, leftInnerCornerY + offset - arrowLength + 9)
+                ctx.lineTo(leftInnerCornerX - 9 * scale, leftInnerCornerY + offset - arrowLength + 9 * scale) // Large head (was 7/7, up from 9/9)
+                ctx.lineTo(leftInnerCornerX + 9 * scale, leftInnerCornerY + offset - arrowLength + 9 * scale)
                 ctx.closePath()
                 ctx.fill()
             } else if (leftInnerCornerY < eyeLevel - 8) {
@@ -2302,8 +2236,8 @@ function drawFixedGuidanceAxes(
 
                 ctx.beginPath()
                 ctx.moveTo(leftInnerCornerX, leftInnerCornerY - offset + arrowLength)
-                ctx.lineTo(leftInnerCornerX - 9, leftInnerCornerY - offset + arrowLength - 9) // Large head (was 7/7, up from 9/9)
-                ctx.lineTo(leftInnerCornerX + 9, leftInnerCornerY - offset + arrowLength - 9)
+                ctx.lineTo(leftInnerCornerX - 9 * scale, leftInnerCornerY - offset + arrowLength - 9 * scale) // Large head (was 7/7, up from 9/9)
+                ctx.lineTo(leftInnerCornerX + 9 * scale, leftInnerCornerY - offset + arrowLength - 9 * scale)
                 ctx.closePath()
                 ctx.fill()
             }
@@ -2318,8 +2252,8 @@ function drawFixedGuidanceAxes(
 
                 ctx.beginPath()
                 ctx.moveTo(rightInnerCornerX, rightInnerCornerY + offset - arrowLength)
-                ctx.lineTo(rightInnerCornerX - 9, rightInnerCornerY + offset - arrowLength + 9) // Large head (was 7/7, up from 9/9)
-                ctx.lineTo(rightInnerCornerX + 9, rightInnerCornerY + offset - arrowLength + 9)
+                ctx.lineTo(rightInnerCornerX - 9 * scale, rightInnerCornerY + offset - arrowLength + 9 * scale) // Large head (was 7/7, up from 9/9)
+                ctx.lineTo(rightInnerCornerX + 9 * scale, rightInnerCornerY + offset - arrowLength + 9 * scale)
                 ctx.closePath()
                 ctx.fill()
             } else if (rightInnerCornerY < eyeLevel - 8) {
@@ -2331,8 +2265,8 @@ function drawFixedGuidanceAxes(
 
                 ctx.beginPath()
                 ctx.moveTo(rightInnerCornerX, rightInnerCornerY - offset + arrowLength)
-                ctx.lineTo(rightInnerCornerX - 9, rightInnerCornerY - offset + arrowLength - 9) // Large head (was 7/7, up from 9/9)
-                ctx.lineTo(rightInnerCornerX + 9, rightInnerCornerY - offset + arrowLength - 9)
+                ctx.lineTo(rightInnerCornerX - 9 * scale, rightInnerCornerY - offset + arrowLength - 9 * scale) // Large head (was 7/7, up from 9/9)
+                ctx.lineTo(rightInnerCornerX + 9 * scale, rightInnerCornerY - offset + arrowLength - 9 * scale)
                 ctx.closePath()
                 ctx.fill()
             }
@@ -2387,7 +2321,8 @@ function FaceGuidanceOverlay({
     height,
     isWithinGuide: forcedWithinGuide,
     isAxesAligned = false,
-    facingMode = 'user'
+    facingMode = 'user',
+    isLaptop = false
 }: {
     ctx: CanvasRenderingContext2D
     face: any
@@ -2401,6 +2336,7 @@ function FaceGuidanceOverlay({
     isVerticalAxisActive?: boolean
     optimizeRendering?: boolean
     facingMode?: 'user' | 'environment'
+    isLaptop?: boolean
 }) {
     if (!face.boundingBox) return
 
@@ -2434,6 +2370,7 @@ function FaceGuidanceOverlay({
         landmarks,
         true, // Always true at this point since we've passed the distance check
         isWithinGuide, // Pass isWithinGuide to control point visibility
-        facingMode === 'user'
+        facingMode === 'user',
+        isLaptop
     )
 }

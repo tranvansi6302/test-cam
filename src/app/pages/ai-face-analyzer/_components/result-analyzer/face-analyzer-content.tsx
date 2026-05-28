@@ -31,7 +31,7 @@ const FaceAnalyzerContent = ({ onShowFaceShapeDialog, onShowEyebrowDialog }: Fac
 
     // Render skeletons for loading state
     const renderSkeletons = () => (
-        <div className='grid grid-cols-1 gap-1.5 xl:grid-cols-2 xl:gap-5'>
+        <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 xl:gap-5'>
             <div className='p-4 bg-white rounded-lg border border-dashed border-slate-200 h-[66px] flex flex-row items-center justify-between gap-4'>
                 <div className='flex w-full justify-between items-center'>
                     <Skeleton width='100px' height='24px' />
@@ -49,7 +49,7 @@ const FaceAnalyzerContent = ({ onShowFaceShapeDialog, onShowEyebrowDialog }: Fac
 
     // Render actual content when data is ready
     const renderContent = () => (
-        <div className='grid grid-cols-2 gap-1.5  xl:gap-5'>
+        <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 xl:gap-5'>
             <div
                 onClick={onShowFaceShapeDialog}
                 className='p-4 bg-white rounded-lg border border-dashed border-slate-200 h-[66px] flex flex-row items-center justify-between gap-4 transition-all duration-300 ease-in-out hover:translate-y-[-2px] hover:shadow-md hover:border-indigo-500 cursor-pointer'

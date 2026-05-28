@@ -275,7 +275,7 @@ function AIFaceAnalyzer() {
 
     const handleDoubleClick = (eyebrow: Eyebrow) => {
         // Process eyebrow positioning first
-        if (eyesBrows && dropZoneWidth && dropZoneHeight) {
+        if (eyesBrows) {
             const leftPoints: number[][] = []
             eyesBrows.pts_up_left_brows.forEach((point) => leftPoints.push(point))
             eyesBrows.pts_down_left_brows.forEach((point) => leftPoints.push(point))
@@ -298,51 +298,49 @@ function AIFaceAnalyzer() {
                 const originalImageWidth = 1028
                 const originalImageHeight = 1028
 
-                const scaledLeftWidth = (originalLeftWidth / originalImageWidth) * 302
-                const scaledLeftHeight = (originalLeftHeight / originalImageHeight) * 302
-                const scaledRightWidth = (originalRightWidth / originalImageWidth) * 302
-                const scaledRightHeight = (originalRightHeight / originalImageHeight) * 302
+                const baseline = 302
+
+                const scaledLeftWidth = (originalLeftWidth / originalImageWidth) * baseline
+                const scaledLeftHeight = (originalLeftHeight / originalImageHeight) * baseline
+                const scaledRightWidth = (originalRightWidth / originalImageWidth) * baseline
+                const scaledRightHeight = (originalRightHeight / originalImageHeight) * baseline
 
                 const newEyebrowSize = {
                     width: Math.max(scaledLeftWidth, scaledRightWidth),
                     height: Math.max(scaledLeftHeight, scaledRightHeight)
                 }
 
-                const leftFrameWidth = Math.max((leftBounds.width / 1028) * 302, newEyebrowSize.width)
-                const leftFrameHeight = Math.max((leftBounds.height / 1028) * 302, newEyebrowSize.height)
-                const rightFrameWidth = Math.max((rightBounds.width / 1028) * 302, newEyebrowSize.width)
-                const rightFrameHeight = Math.max((rightBounds.height / 1028) * 302, newEyebrowSize.height)
+                const leftFrameWidth = Math.max((leftBounds.width / 1028) * baseline, newEyebrowSize.width)
+                const leftFrameHeight = Math.max((leftBounds.height / 1028) * baseline, newEyebrowSize.height)
+                const rightFrameWidth = Math.max((rightBounds.width / 1028) * baseline, newEyebrowSize.width)
+                const rightFrameHeight = Math.max((rightBounds.height / 1028) * baseline, newEyebrowSize.height)
 
-                // Apply a small upward offset so eyebrows align tightly with landmark curves
-                // Ratio can be tuned; 0.22 empirically matches the drawn guides better than centering
-                const EYEBROW_Y_OFFSET_RATIO = 0.22
-                const EYEBROW_INNER_X_OFFSET_RATIO = 0.06
+                // Define eyebrow size relative to 302 baseline using a small 1.1 multiplier
+                const eyebrowMultiplier = 1.1
+                const eyebrowWidth = rightFrameWidth * eyebrowMultiplier
+                const eyebrowHeight = rightFrameHeight * eyebrowMultiplier
 
+                // Position the eyebrows using a mathematical centering formula
                 const leftPosition = {
                     x:
-                        (leftBounds.left / 1028) * dropZoneWidth +
-                        (leftFrameWidth - newEyebrowSize.width) / 2 +
-                        newEyebrowSize.width * EYEBROW_INNER_X_OFFSET_RATIO,
+                        (leftBounds.left / 1028) * baseline -
+                        (eyebrowWidth - leftFrameWidth) / 2 -
+                        8,
                     y:
-                        (leftBounds.top / 1028) * dropZoneHeight +
-                        (leftFrameHeight - newEyebrowSize.height) / 2 -
-                        newEyebrowSize.height * EYEBROW_Y_OFFSET_RATIO
+                        (leftBounds.top / 1028) * baseline -
+                        (eyebrowHeight - leftFrameHeight) / 2 -
+                        3
                 }
 
                 const rightPosition = {
                     x:
-                        (rightBounds.left / 1028) * dropZoneWidth +
-                        (rightFrameWidth - newEyebrowSize.width) / 2 -
-                        newEyebrowSize.width * EYEBROW_INNER_X_OFFSET_RATIO,
+                        (rightBounds.left / 1028) * baseline -
+                        (eyebrowWidth - rightFrameWidth) / 2 +
+                        8,
                     y:
-                        (rightBounds.top / 1028) * dropZoneHeight +
-                        (rightFrameHeight - newEyebrowSize.height) / 2 -
-                        newEyebrowSize.height * EYEBROW_Y_OFFSET_RATIO
-                }
-
-                const leftFinalPosition = {
-                    x: leftPosition.x - 5,
-                    y: leftPosition.y
+                        (rightBounds.top / 1028) * baseline -
+                        (eyebrowHeight - rightFrameHeight) / 2 -
+                        3
                 }
 
                 const newBoxes: PlacedBox[] = [
@@ -350,11 +348,11 @@ function AIFaceAnalyzer() {
                         id: leftId,
                         name: eyebrow.name,
                         image: eyebrow.image,
-                        position: leftFinalPosition,
-                        originalPosition: leftFinalPosition, // Lưu vị trí ban đầu
+                        position: leftPosition,
+                        originalPosition: leftPosition, // Lưu vị trí ban đầu
                         flip: false,
                         scale: 1, // Scale mặc định
-                        anchorPoint: leftFinalPosition // Inner corner của chân mày trái
+                        anchorPoint: leftPosition // Inner corner của chân mày trái
                     },
                     {
                         id: rightId,
@@ -366,7 +364,7 @@ function AIFaceAnalyzer() {
                         scale: 1, // Scale mặc định
                         anchorPoint: {
                             // Inner corner của chân mày phải (do flip)
-                            x: rightPosition.x + newEyebrowSize.width * 0.2,
+                            x: rightPosition.x + eyebrowWidth * 0.2,
                             y: rightPosition.y
                         }
                     }
@@ -375,8 +373,8 @@ function AIFaceAnalyzer() {
                 setPlacedBoxes(newBoxes)
                 setSavedPosition(leftPosition)
                 setEyebrowSize({
-                    width: rightFrameWidth * 2,
-                    height: rightFrameHeight * 2
+                    width: eyebrowWidth,
+                    height: eyebrowHeight
                 })
             }
         }
@@ -407,8 +405,8 @@ function AIFaceAnalyzer() {
         }
 
         try {
-            const canvasWidth = 568
-            const canvasHeight = 568
+            const canvasWidth = 302
+            const canvasHeight = 302
 
             // Function to create eyebrow image with given background
             const createEyebrowImage = (backgroundImageSrc: string): Promise<string> => {
@@ -427,33 +425,17 @@ function AIFaceAnalyzer() {
                     backgroundImg.crossOrigin = 'anonymous'
 
                     backgroundImg.onload = () => {
-                        // Draw background with 'contain' behavior to preserve aspect ratio (same as modal)
-                        const imgW = backgroundImg.width
-                        const imgH = backgroundImg.height
+                        // Draw background to fill the canvas exactly (100% 100%)
                         const canvasW = canvas.width
                         const canvasH = canvas.height
-                        const imgRatio = imgW / imgH
-                        const canvasRatio = canvasW / canvasH
-                        let drawW = canvasW
-                        let drawH = canvasH
-                        let offsetX = 0
-                        let offsetY = 0
-                        if (imgRatio > canvasRatio) {
-                            drawW = canvasW
-                            drawH = Math.round(canvasW / imgRatio)
-                            offsetY = Math.round((canvasH - drawH) / 2)
-                        } else {
-                            drawH = canvasH
-                            drawW = Math.round(canvasH * imgRatio)
-                            offsetX = Math.round((canvasW - drawW) / 2)
-                        }
+                        const offsetX = 0
+                        const offsetY = 0
                         ctx.clearRect(0, 0, canvasW, canvasH)
-                        ctx.drawImage(backgroundImg, offsetX, offsetY, drawW, drawH)
+                        ctx.drawImage(backgroundImg, 0, 0, canvasW, canvasH)
 
                         const loadEyebrowImages = async () => {
-                            const scaleX = canvasWidth / dropZoneWidth
-                            const scaleY = canvasHeight / dropZoneHeight
-                            const HEIGHT_BOOST_RATIO = 1.26 // 1.5x taller eyebrows on exported preview
+                            const scaleX = canvasWidth / 302
+                            const scaleY = canvasHeight / 302
                             const eyebrowPromises = placedBoxes.map((box) => {
                                 return new Promise<void>((resolve) => {
                                     const img = new Image()
@@ -465,8 +447,8 @@ function AIFaceAnalyzer() {
                                         const modalY = box.position.y * scaleY
                                         const scale = box.scale || 1
                                         // Keep the same on-canvas size as in modal to ensure parity
-                                        const scaledWidth = eyebrowSize.width * scale
-                                        const scaledHeight = eyebrowSize.height * scale * HEIGHT_BOOST_RATIO
+                                        const scaledWidth = eyebrowSize.width * scale * (canvasWidth / 302)
+                                        const scaledHeight = scaledWidth * (img.height / img.width)
 
                                         // Apply same letterbox offsets
                                         const drawX = modalX + offsetX
@@ -557,17 +539,15 @@ function AIFaceAnalyzer() {
                 disableNavigate
             />
 
-            <main className='w-full max-w-[1350px] mx-auto px-4 max-sm:px-2 mt-1 pb-[60px]'>
-                <div className='flex flex-col gap-5 lg:flex-row items-start'>
-                    {/* Left side: Face information */}
-                    <div className='w-full lg:w-[80%]'>
-                        <div className='flex justify-between w-full my-2 items-center'>
-                            <Link to='/ai-face-analyzer-list' className='flex items-center gap-2 text-gray-500 text-sm mb-3 '>
-                                <ArrowBigLeft />
-                                Quay về danh sách
-                            </Link>
-                            <button
-                                className='
+            {/* Sticky Header Bar - 100% Viewport width, touching left/right of screen */}
+            <div className='sticky top-0 z-[40] bg-white/95 backdrop-blur-md border-b border-slate-100 py-3 transition-all w-full shadow-sm'>
+                <div className='max-w-[1350px] mx-auto px-4 max-sm:px-2 flex justify-between w-full items-center'>
+                    <Link to='/ai-face-analyzer-list' className='flex items-center gap-1.5 text-slate-500 hover:text-pink-500 transition-colors text-sm font-semibold select-none'>
+                        <ArrowBigLeft className='w-4 h-4' />
+                        Quay về danh sách
+                    </Link>
+                    <button
+                        className='
     group relative overflow-hidden px-4 py-2 text-[12px] rounded-sm text-sm font-medium
     bg-gradient-to-r from-pink-500 to-pink-600 text-white 
     border border-pink-400/30 backdrop-blur-sm
@@ -576,38 +556,44 @@ function AIFaceAnalyzer() {
     flex items-center gap-2 shadow-lg shadow-pink-500/25
     pink-glow
   '
-                                onClick={handleOpenFormCustomers}
-                            >
-                                <svg
-                                    className='w-4 h-4 transform group-hover:rotate-12 transition-transform duration-300'
-                                    fill='none'
-                                    stroke='currentColor'
-                                    viewBox='0 0 24 24'
-                                >
-                                    <path
-                                        strokeLinecap='round'
-                                        strokeLinejoin='round'
-                                        strokeWidth={2}
-                                        d='M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4'
-                                    />
-                                </svg>
-                                <span className='relative z-10'>Lưu thông tin</span>
-                                <div
-                                    className='
+                        onClick={handleOpenFormCustomers}
+                    >
+                        <svg
+                            className='w-4 h-4 transform group-hover:rotate-12 transition-transform duration-300'
+                            fill='none'
+                            stroke='currentColor'
+                            viewBox='0 0 24 24'
+                        >
+                            <path
+                                strokeLinecap='round'
+                                strokeLinejoin='round'
+                                strokeWidth={2}
+                                d='M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4'
+                            />
+                        </svg>
+                        <span className='relative z-10'>Lưu thông tin</span>
+                        <div
+                            className='
     absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent 
     translate-x-[-150%] group-hover:translate-x-[150%] 
     transition-transform duration-500 ease-out
     skew-x-[-20deg]
   '
-                                ></div>
-                                <div
-                                    className='
+                        ></div>
+                        <div
+                            className='
     absolute inset-0 bg-pink-400/20 opacity-0 group-hover:opacity-100
     transition-opacity duration-300
   '
-                                ></div>
-                            </button>
-                        </div>
+                        ></div>
+                    </button>
+                </div>
+            </div>
+
+            <main className='w-full max-w-[1350px] mx-auto px-4 max-sm:px-2 mt-1 pb-[60px]'>
+                <div className='flex flex-col gap-5 lg:flex-row items-start'>
+                    {/* Left side: Face information */}
+                    <div className='w-full lg:w-[80%]'>
                         <FaceAnalyzerImgSet
                             availableEyebrows={eyebrowList ?? []}
                             placedBoxes={placedBoxes}
@@ -649,7 +635,7 @@ function AIFaceAnalyzer() {
                         />{' '}
                     </div>
                     {/* Right side: Controls */}
-                    <div className='w-full lg:w-[20%]  border border-dashed border-[#a9a9a9] rounded-[4px] p-2 lg:mt-[45px]'>
+                    <div className='hidden lg:block lg:w-[20%]  border border-dashed border-[#a9a9a9] rounded-[4px] p-2 lg:mt-[45px]'>
                         <div className='mb-6 flex items-center gap-2'>
                             <SectionTitle icon={<Settings2 size={16} className='text-[#505050]' />}>Tùy chỉnh</SectionTitle>
                         </div>

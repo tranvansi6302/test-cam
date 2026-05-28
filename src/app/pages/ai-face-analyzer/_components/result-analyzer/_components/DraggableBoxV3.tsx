@@ -1,4 +1,3 @@
-import { Check, Minus, Plus } from 'lucide-react'
 import React, { Fragment, useEffect, useRef, useState } from 'react'
 
 interface DraggableBoxProps {
@@ -11,12 +10,8 @@ interface DraggableBoxProps {
     flip?: boolean
     width?: number
     height?: number
-    scale?: number
     onDoubleClick?: () => void
     onClick?: () => void
-    onZoomIn?: () => void
-    onZoomOut?: () => void
-    isActive?: boolean
     noBorder?: boolean
     notActive?: boolean
 }
@@ -30,12 +25,8 @@ export const DraggableBoxV3: React.FC<DraggableBoxProps> = ({
     flip = false,
     width = '140',
     height = 'auto',
-    scale = 1,
     onDoubleClick,
 
-    onZoomIn,
-    onZoomOut,
-    isActive = false,
     className = '',
     noBorder = false,
     notActive = false
@@ -225,12 +216,9 @@ export const DraggableBoxV3: React.FC<DraggableBoxProps> = ({
                 top: y,
                 transform: flip ? 'scaleX(-1)' : 'none',
                 willChange: isDragging ? 'transform' : 'auto',
-                // padding: isActive ? '10px' : '0px',
-                borderRadius: isActive || notActive ? '4px' : '0px',
+                borderRadius: notActive ? '4px' : '0px',
                 border: noBorder
                     ? 'none !important'
-                    : isActive
-                    ? '1px solid oklch(72.3% 0.219 149.579)'
                     : notActive
                     ? '1px solid #e7e7e7'
                     : '1px solid transparent'
@@ -261,43 +249,9 @@ export const DraggableBoxV3: React.FC<DraggableBoxProps> = ({
                         alt={name}
                         draggable='false'
                     />
-                    {isActive && (
-                        <button className=' rounded-full bg-green-500 translate-x-[10px]'>
-                            <Check fontSize={'10px'} color='white' />
-                        </button>
-                    )}
                 </Fragment>
             ) : (
                 <div className='w-full h-full bg-blue-500 flex items-center justify-center text-white'>{name}</div>
-            )}
-
-            {/* Zoom Controls - chỉ hiển thị khi isActive */}
-            {isActive && (
-                <div className='absolute -top-10 left-1/2 transform -translate-x-1/2 flex gap-1 bg-white rounded-md shadow-lg border p-1'>
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            e.preventDefault()
-                            if (onZoomOut) onZoomOut()
-                        }}
-                        className='w-6 h-6 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded text-gray-600 text-xs'
-                        title='Thu nhỏ'
-                    >
-                        <Minus size={12} />
-                    </button>
-                    <span className='px-2 py-1 text-xs font-medium text-gray-700'>{Math.round(scale * 100)}%</span>
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            e.preventDefault()
-                            if (onZoomIn) onZoomIn()
-                        }}
-                        className='w-6 h-6 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded text-gray-600 text-xs'
-                        title='Phóng to'
-                    >
-                        <Plus size={12} />
-                    </button>
-                </div>
             )}
         </div>
     )

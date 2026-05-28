@@ -1,64 +1,31 @@
-/* Desktop filter row styling */
-.desktop-filter-row {
-  padding: 8px 15px;
-  background-color: white;
-  border-bottom: 1px solid #eaeaea;
+/* Utility to hide scrollbars for clean horizontal swiping on mobile */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }
 
-/* Responsive styling for tablet and mobile */
-@media (max-width: 1023px) {
-  /* Create a separate row for filters on mobile and small tablets */
-  .mobile-filter-row {
-    display: flex !important; /* Only apply on screens < 1024px */
-    width: 100%;
-    padding: 8px 15px;
-    background-color: white;
-    border-bottom: 1px solid #eaeaea;
-    align-items: center;
-  }
-  
-  /* Style the filter dropdown container */
-  .filter-dropdown-container {
-    width: 30%;
-    margin-left: 0 !important;
-    margin-right: 10px;
-  }
-  
-  .filter-dropdown-container .p-dropdown {
-    width: 100%;
-  }
-  
-  /* Style the status filters */
-  .status-filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px !important;
-    width: 70%;
-  }
-  
-  .status-filters > div {
-    flex: 1;
-    text-align: center;
-    display: flex;
-    justify-content: center;
-  }
-  
-  /* Adjust main content padding */
-  .main-content {
-    padding-top: 95px !important;
-  }
-
-  /* Make buttons more compact on mobile */
-  .header-buttons {
-    gap: 4px !important;
-  }
-
-  .header-buttons button {
-    padding: 4px 8px !important;
-    font-size: 12px !important;
-  }
-
-  .header-buttons button span {
-    display: none;
-  }
+.scrollbar-none {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
 }
+
+/* Custom premium transitions and focus states if needed */
+.p-dropdown:not(.p-disabled).p-focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.2) !important;
+}
+
+/* Ensure smooth image zoom and filter transitions */
+.group:hover img {
+  transform: scale(1.04);
+}
+
+/* Make avatar image cover its container perfectly on all devices, override PrimeReact inline contain */
+.avatar-container .p-image,
+.avatar-container .p-image-preview-container,
+.avatar-container .p-image-preview-container > img {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+  object-fit: cover !important;
+}
+
