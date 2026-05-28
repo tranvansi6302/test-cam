@@ -1,6 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { Eye } from 'lucide-react'
-import { Image } from 'primereact/image'
 import { Skeleton } from 'primereact/skeleton'
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { useAnalysisStore } from '../../../../stores/analysis.store'

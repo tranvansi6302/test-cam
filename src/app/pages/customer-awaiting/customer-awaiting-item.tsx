@@ -1,5 +1,5 @@
 import { formatDate } from 'date-fns'
-import { Calendar, Check, CircleCheck, Clock, MapPin, Phone, User } from 'lucide-react'
+import { Calendar, MapPin, Phone, User } from 'lucide-react'
 import { Image } from 'primereact/image'
 import { useState, useMemo } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'

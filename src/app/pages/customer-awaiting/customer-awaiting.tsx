@@ -1,7 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, Info, RefreshCw } from 'lucide-react'
-import { Dropdown } from 'primereact/dropdown'
 import { Skeleton } from 'primereact/skeleton'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -14,11 +13,6 @@ import { useEyebrowListStore } from '../../stores/eyebrown.store'
 import './customer-awaiting.css'
 import CustomerAwaitingItem from './customer-awaiting-item'
 
-// Định nghĩa kiểu dữ liệu cho tùy chọn lọc
-interface FilterOption {
-    name: string
-    value: number
-}
 
 export default function CustomerAwaiting() {
     const { setDropZoneSize, setBase64RemoveEyebrow, setBase64WithEyebrow, setPlacedBoxes, setSavedPosition } =
@@ -48,12 +42,6 @@ export default function CustomerAwaiting() {
     const toastShownRef = useRef(false)
     const [showBookingModal, setShowBookingModal] = useState(false)
 
-    const filterOptions: FilterOption[] = [
-        { name: 'Tất cả', value: -1 },
-        { name: 'Đang đợi', value: 0 },
-        { name: 'Đã phân tích', value: 1 },
-        { name: 'Đã hoàn thành', value: 2 }
-    ]
     const [activeFilter, setActiveFilter] = useState<number>(-1) // Mặc định là "Tất cả"
 
     const navigate = useNavigate()
