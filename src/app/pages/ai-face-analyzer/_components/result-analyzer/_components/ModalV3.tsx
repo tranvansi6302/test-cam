@@ -73,58 +73,69 @@ export const ModalV3: React.FC<ModalProps> = ({
                 <span className='text-white text-xs md:text-sm font-semibold tracking-wider text-center'>Tinh chỉnh chân mày</span>
                 <button
                     onClick={handleSave}
-                    className='px-5 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 active:scale-95 text-white rounded-full text-xs font-bold shadow-lg shadow-emerald-500/20 transition-all'
+                    className='md:hidden px-5 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 active:scale-95 text-white rounded-full text-xs font-bold shadow-lg shadow-emerald-500/20 transition-all'
                 >
                     Lưu lại
                 </button>
             </div>
 
             {/* Main Central Canvas area - Dark Container for Focus */}
-            <div className='relative w-[302px] h-[302px] aspect-square rounded-xl overflow-hidden border border-white/10 shadow-2xl z-[30] bg-[#121620]'>
+            <div className='relative w-[302px] h-[302px] md:w-[450px] md:h-[450px] lg:w-[568px] lg:h-[568px] aspect-square rounded-xl overflow-hidden border border-white/10 shadow-2xl z-[30] bg-[#121620]'>
                 <div className='w-full h-full flex items-center justify-center'>{children}</div>
             </div>
 
             {/* Bottom Premium Toolbar - Dark Glassmorphism */}
-            <div className='absolute bottom-8 left-0 right-0 flex items-center justify-center gap-4 px-6 z-[40]'>
+            <div className='absolute bottom-8 left-0 right-0 flex flex-wrap items-center justify-center gap-3 px-6 z-[40] max-w-full'>
                 {/* Display settings trigger */}
                 <button
                     onClick={() => setIsSettingsOpen(true)}
-                    className='flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl bg-white/10 border border-white/10 backdrop-blur-md text-white hover:bg-white/20 hover:scale-105 active:scale-95 transition-all min-w-[75px]'
+                    className='flex flex-row items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 border border-white/10 backdrop-blur-md text-white hover:bg-white/20 hover:scale-105 active:scale-95 transition-all text-xs font-semibold'
                 >
-                    <svg className='w-5 h-5 text-cyan-400' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+                    <svg className='w-4.5 h-4.5 text-cyan-400' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
                         <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' />
                         <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15 12a3 3 0 11-6 0 3 3 0 016 0z' />
                     </svg>
-                    <span className='text-[10px] font-semibold tracking-wide'>Cài đặt</span>
+                    <span>Cài đặt</span>
                 </button>
 
                 {/* Eyebrow list menu trigger */}
                 <button
                     onClick={toggleMenu}
-                    className='flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500/20 to-indigo-500/20 border border-purple-500/30 backdrop-blur-md text-white hover:from-purple-500/30 hover:to-indigo-500/30 hover:scale-105 active:scale-95 transition-all min-w-[75px]'
+                    className='flex flex-row items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-500/20 to-indigo-500/20 border border-purple-500/30 backdrop-blur-md text-white hover:from-purple-500/30 hover:to-indigo-500/30 hover:scale-105 active:scale-95 transition-all text-xs font-semibold'
                 >
-                    <svg className='w-5 h-5 text-purple-400' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+                    <svg className='w-4.5 h-4.5 text-purple-400' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
                         <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M4 6h16M4 12h16M4 18h16' />
                     </svg>
-                    <span className='text-[10px] font-semibold tracking-wide'>Dáng mày</span>
+                    <span>Dáng mày</span>
                 </button>
 
                 {/* Sync Mode trigger */}
                 {onToggleSyncMode && (
                     <button
                         onClick={onToggleSyncMode}
-                        className={`flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl border backdrop-blur-md hover:scale-105 active:scale-95 transition-all min-w-[75px] ${
+                        className={`flex flex-row items-center gap-1.5 px-3 py-1.5 rounded-xl border backdrop-blur-md hover:scale-105 active:scale-95 transition-all text-xs font-semibold ${
                             syncMode
                                 ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-300 shadow-sm'
                                 : 'bg-white/10 border border-white/10 text-white'
                         }`}
                     >
-                        <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+                        <svg className='w-4.5 h-4.5' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
                             <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4' />
                         </svg>
-                        <span className='text-[10px] font-semibold tracking-wide'>{syncMode ? 'Đồng bộ' : 'Đơn lẻ'}</span>
+                        <span>{syncMode ? 'Đồng bộ' : 'Đơn lẻ'}</span>
                     </button>
                 )}
+
+                {/* Save button inline - Desktop/Tablet only */}
+                <button
+                    onClick={handleSave}
+                    className='hidden md:flex flex-row items-center gap-1.5 px-4 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 active:scale-95 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-500/20 transition-all'
+                >
+                    <svg className='w-4.5 h-4.5 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+                        <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M5 13l4 4L19 7' />
+                    </svg>
+                    <span>Lưu lại</span>
+                </button>
             </div>
 
             {/* Slide-Up Settings Bottom Sheet - GORGEOUS LIGHT MODE */}

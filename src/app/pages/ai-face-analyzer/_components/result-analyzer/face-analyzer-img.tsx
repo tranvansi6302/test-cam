@@ -126,10 +126,7 @@ interface FaceAnalyzerImgSetProps {
     setDropZoneHeight: (height: number) => void
     eyebrowSize: { width: number; height: number }
     setEyebrowSize: (size: { width: number; height: number }) => void
-    isLoadingModal: boolean
-    setIsLoadingModal: (loading: boolean) => void
     onAutoSave?: () => void
-    isFirstTimeApply: boolean
 }
 
 const FaceAnalyzerImgSet = ({
@@ -144,10 +141,7 @@ const FaceAnalyzerImgSet = ({
     dropZoneHeight,
     setDropZoneHeight,
     eyebrowSize,
-    isLoadingModal,
-    setIsLoadingModal,
-    onAutoSave,
-    isFirstTimeApply
+    onAutoSave
 }: FaceAnalyzerImgSetProps) => {
     const { analysisData, eyesBrows, isCallParamChange } = useAnalysisStore()
     const { setBase64RemoveEyebrow, base64RemoveEyebrow, setBase64WithEyebrow, base64WithEyebrow } = useEyebrowListStore()
@@ -160,6 +154,7 @@ const FaceAnalyzerImgSet = ({
     const [hidePlacedBoxes, setHidePlacedBoxes] = useState(false)
     const [showPoints, setShowPoints] = useState(false)
     const [showOverlayImage, setShowOverlayImage] = useState(false)
+    const [hideEyebrowsInModal, setHideEyebrowsInModal] = useState(false)
     const [showDrawLines, setShowDrawLines] = useState(true)
     const [modalDropZoneWidth, setModalDropZoneWidth] = useState(0)
     const [modalDropZoneHeight, setModalDropZoneHeight] = useState(0)
@@ -446,6 +441,7 @@ const FaceAnalyzerImgSet = ({
     // Toggle points visibility
     const togglePoints = () => {
         setShowPoints(!showPoints)
+        setHideEyebrowsInModal(false)
         if (!showPoints && !openModalPreview) {
             setOpenModalPreview(true)
         }
@@ -453,12 +449,14 @@ const FaceAnalyzerImgSet = ({
 
     // Toggle overlay image
     const toggleOverlayImage = () => {
+        setHideEyebrowsInModal(false)
         setShowOverlayImage(!showOverlayImage)
     }
 
     // Toggle draw lines visibility
     const toggleDrawLines = () => {
         setShowDrawLines(!showDrawLines)
+        setHideEyebrowsInModal(false)
     }
 
     // Update canvas when points visibility changes or modal state changes
@@ -974,6 +972,7 @@ const FaceAnalyzerImgSet = ({
             return
         }
 
+        setHideEyebrowsInModal(false)
         // Nếu chân mày chưa được đặt, gọi onDoubleClick từ parent để xử lý đúng
         onDoubleClick(eyebrow)
     }
@@ -1158,35 +1157,33 @@ const FaceAnalyzerImgSet = ({
         }
     }
 
-    const handleOpenModal = (showOriginal: boolean) => {
+    const handleOpenModal = (showOriginal: boolean, hideEyebrows: boolean) => {
         setShowOverlayImage(showOriginal)
-        if (isFirstTimeApply) {
-            setIsLoadingModal(true)
-            setTimeout(() => {
-                setIsLoadingModal(false)
-                setOpenModalPreview(true)
-            }, 3000)
-        } else {
-            setOpenModalPreview(true)
-        }
+        setHideEyebrowsInModal(hideEyebrows)
+        setOpenModalPreview(true)
     }
 
     return (
         <Fragment>
-            <div className='w-full grid grid-cols-1 md:grid-cols-3 gap-3.5 items-stretch'>
-                <ResultImageItem
-                    title='Ảnh gốc'
-                    imageSrc={analysisData?.input_final_b64_string || ''}
-                    onClick={() => handleOpenModal(true)}
-                />
-                <ResultImageItem
-                    title='Đè chân mày'
-                    imageSrc={
-                        base64WithEyebrow ? base64WithEyebrow : analysisData?.output_with_eyebrows_orginal_final_b64_string || ''
-                    }
-                    onClick={() => handleOpenModal(true)}
-                />
-                <div className='flex flex-col relative'>
+            <div className='w-full flex flex-col gap-3.5'>
+                {/* Row 1: grid-cols-2 for original image and overlay eyebrows */}
+                <div className='w-full grid grid-cols-2 gap-3.5 items-stretch'>
+                    <ResultImageItem
+                        title='Ảnh gốc'
+                        imageSrc={analysisData?.input_final_b64_string || ''}
+                        onClick={() => handleOpenModal(true, true)}
+                    />
+                    <ResultImageItem
+                        title='Đè chân mày'
+                        imageSrc={
+                            base64WithEyebrow ? base64WithEyebrow : analysisData?.output_with_eyebrows_orginal_final_b64_string || ''
+                        }
+                        onClick={() => handleOpenModal(true, false)}
+                    />
+                </div>
+
+                {/* Row 2: Shaved eyebrows image alone, centered and styled symmetrically on larger screens */}
+                <div className='w-full flex flex-col relative md:max-w-[calc(50%-7px)] md:mx-auto lg:max-w-[calc(50%-7px)] lg:mx-auto'>
                     {isCallParamChange ? (
                         <div className='w-full rounded-[4px] overflow-hidden aspect-square relative'>
                             <Skeleton className='w-full !h-full !rounded-[4px] flex items-center justify-center flex-col gap-2'></Skeleton>
@@ -1210,7 +1207,7 @@ const FaceAnalyzerImgSet = ({
                                     borderRadius: '4px'
                                 }}
                                 className='relative group w-full h-full cursor-pointer'
-                                onClick={() => handleOpenModal(false)}
+                                onClick={() => handleOpenModal(false, false)}
                             >
                                 <div className='absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center'>
                                     <Eye className='w-8 h-8 text-white' />
@@ -1280,7 +1277,7 @@ const FaceAnalyzerImgSet = ({
                                                 handleEyebrowDoubleClick(eyebrow)
                                             }
                                         }}
-                                        className={hidePlacedBoxes ? 'opacity-0' : 'opacity-100'}
+                                        className={hideEyebrowsInModal || hidePlacedBoxes ? 'opacity-0 pointer-events-none' : 'opacity-100'}
                                         noBorder={false}
                                     />
                                 )
@@ -1289,15 +1286,7 @@ const FaceAnalyzerImgSet = ({
                     </ModalV3>
                 )}
 
-                {/* Loading Modal */}
-                {isLoadingModal && (
-                    <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/80'>
-                        <div className='bg-white rounded-lg p-8 flex flex-col items-center gap-4'>
-                            <div className='w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin'></div>
-                            <p className='text-gray-700'>Đang mở modal...</p>
-                        </div>
-                    </div>
-                )}
+
             </div>
         </Fragment>
     )

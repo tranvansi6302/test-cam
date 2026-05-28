@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useQuery } from '@tanstack/react-query'
-import { ArrowBigLeft, Settings2 } from 'lucide-react'
+import { ArrowLeft, Settings2 } from 'lucide-react'
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { beautyApi } from '../../apis/beauty.api'
@@ -540,26 +540,26 @@ function AIFaceAnalyzer() {
             />
 
             {/* Sticky Header Bar - 100% Viewport width, touching left/right of screen */}
-            <div className='sticky top-0 z-[40] bg-white/95 backdrop-blur-md border-b border-slate-100 py-3 transition-all w-full shadow-sm'>
+            <div className='sticky top-0 z-[40] bg-white/85 backdrop-blur-md border-b border-slate-100 py-1.5 max-sm:py-1 transition-all w-full shadow-sm'>
                 <div className='max-w-[1350px] mx-auto px-4 max-sm:px-2 flex justify-between w-full items-center'>
-                    <Link to='/ai-face-analyzer-list' className='flex items-center gap-1.5 text-slate-500 hover:text-pink-500 transition-colors text-sm font-semibold select-none'>
-                        <ArrowBigLeft className='w-4 h-4' />
+                    <Link to='/ai-face-analyzer-list' className='flex items-center gap-1 text-slate-500 hover:text-pink-500 transition-colors text-[11px] sm:text-xs font-semibold select-none'>
+                        <ArrowLeft className='w-3.5 h-3.5' />
                         Quay về danh sách
                     </Link>
                     <button
                         className='
-    group relative overflow-hidden px-4 py-2 text-[12px] rounded-sm text-sm font-medium
+    group relative overflow-hidden px-2.5 py-1 text-[11px] sm:text-xs rounded-[4px] font-semibold
     bg-gradient-to-r from-pink-500 to-pink-600 text-white 
     border border-pink-400/30 backdrop-blur-sm
     hover:from-pink-600 hover:to-pink-700 hover:scale-105
     transition-all duration-300 ease-in-out transform
-    flex items-center gap-2 shadow-lg shadow-pink-500/25
+    flex items-center gap-1.5 shadow-lg shadow-pink-500/25
     pink-glow
   '
                         onClick={handleOpenFormCustomers}
                     >
                         <svg
-                            className='w-4 h-4 transform group-hover:rotate-12 transition-transform duration-300'
+                            className='w-3.5 h-3.5 transform group-hover:rotate-12 transition-transform duration-300'
                             fill='none'
                             stroke='currentColor'
                             viewBox='0 0 24 24'
@@ -607,10 +607,7 @@ function AIFaceAnalyzer() {
                             setDropZoneHeight={setDropZoneHeight}
                             eyebrowSize={eyebrowSize}
                             setEyebrowSize={setEyebrowSize}
-                            isLoadingModal={isLoadingModal}
-                            setIsLoadingModal={setIsLoadingModal}
                             onAutoSave={handleAutoSave}
-                            isFirstTimeApply={isFirstTimeApply}
                         />
                         {/* Chân mày apply trên mobile */}
                         {!breakpoints.desktop && !breakpoints.tabletLandscape && (
