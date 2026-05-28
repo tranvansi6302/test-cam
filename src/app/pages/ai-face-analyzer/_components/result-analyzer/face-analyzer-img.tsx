@@ -1158,7 +1158,8 @@ const FaceAnalyzerImgSet = ({
         }
     }
 
-    const handleOpenModal = () => {
+    const handleOpenModal = (showOriginal: boolean) => {
+        setShowOverlayImage(showOriginal)
         if (isFirstTimeApply) {
             setIsLoadingModal(true)
             setTimeout(() => {
@@ -1176,14 +1177,14 @@ const FaceAnalyzerImgSet = ({
                 <ResultImageItem
                     title='Ảnh gốc'
                     imageSrc={analysisData?.input_final_b64_string || ''}
-                    onClick={handleOpenModal}
+                    onClick={() => handleOpenModal(true)}
                 />
                 <ResultImageItem
                     title='Đè chân mày'
                     imageSrc={
                         base64WithEyebrow ? base64WithEyebrow : analysisData?.output_with_eyebrows_orginal_final_b64_string || ''
                     }
-                    onClick={handleOpenModal}
+                    onClick={() => handleOpenModal(false)}
                 />
                 <div className='flex flex-col relative'>
                     {isCallParamChange ? (
@@ -1209,7 +1210,7 @@ const FaceAnalyzerImgSet = ({
                                     borderRadius: '4px'
                                 }}
                                 className='relative group w-full h-full cursor-pointer'
-                                onClick={handleOpenModal}
+                                onClick={() => handleOpenModal(false)}
                             >
                                 <div className='absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center'>
                                     <Eye className='w-8 h-8 text-white' />
@@ -1243,8 +1244,8 @@ const FaceAnalyzerImgSet = ({
                             style={{
                                 // Dynamic background image based on toggle state
                                 backgroundImage: showOverlayImage
-                                    ? `url(data:image/png;base64,${analysisData?.output_with_eyebrows_orginal_final_b64_string})`
-                                    : `url(data:image/png;base64,${analysisData?.output_remove_eyebrows_final_b64_string})`,
+                                    ? `url(${addBase64Prefix(analysisData?.output_with_eyebrows_orginal_final_b64_string)})`
+                                    : `url(${addBase64Prefix(analysisData?.output_remove_eyebrows_final_b64_string)})`,
                                 backgroundSize: '100% 100%',
                                 backgroundPosition: 'center',
                                 backgroundRepeat: 'no-repeat',
