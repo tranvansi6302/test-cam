@@ -1184,7 +1184,7 @@ const FaceAnalyzerImgSet = ({
                     imageSrc={
                         base64WithEyebrow ? base64WithEyebrow : analysisData?.output_with_eyebrows_orginal_final_b64_string || ''
                     }
-                    onClick={() => handleOpenModal(false)}
+                    onClick={() => handleOpenModal(true)}
                 />
                 <div className='flex flex-col relative'>
                     {isCallParamChange ? (
