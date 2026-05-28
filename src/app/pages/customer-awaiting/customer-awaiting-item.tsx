@@ -86,7 +86,7 @@ export default function CustomerAwaitingItem({ aiFace }: CustomerAwaitingItemPro
                     {/* Customer Meta Details */}
                     <div className='text-[13px] flex flex-col justify-center gap-1.5 flex-1 min-w-0'>
                         <div className='flex flex-wrap items-center gap-2 mb-0.5'>
-                            <h3 className='font-semibold text-slate-800 text-[14px] sm:text-[15px]'>
+                            <h3 className='font-medium text-slate-800 text-[14px] sm:text-[15px]'>
                                 {aiFace.customer ? `${aiFace.customer.firstName} ${aiFace.customer.lastName}` : 'Chưa có thông tin'}
                             </h3>
                             {statusBadge}
@@ -132,22 +132,20 @@ export default function CustomerAwaitingItem({ aiFace }: CustomerAwaitingItemPro
                                 <button
                                     type='button'
                                     onClick={() => handleGenderChange(false)}
-                                    className={`flex-1 py-1 text-center text-[11px] font-semibold rounded-md transition-all cursor-pointer ${
-                                        !isMale 
-                                            ? 'bg-white text-pink-600 shadow-sm' 
+                                    className={`flex-1 py-1 text-center text-[11px] font-semibold rounded-md transition-all cursor-pointer ${!isMale
+                                            ? 'bg-white text-pink-600 shadow-sm'
                                             : 'text-slate-600 hover:text-slate-800'
-                                    }`}
+                                        }`}
                                 >
                                     Chân mày nữ
                                 </button>
                                 <button
                                     type='button'
                                     onClick={() => handleGenderChange(true)}
-                                    className={`flex-1 py-1 text-center text-[11px] font-semibold rounded-md transition-all cursor-pointer ${
-                                        isMale 
-                                            ? 'bg-white text-blue-600 shadow-sm' 
+                                    className={`flex-1 py-1 text-center text-[11px] font-semibold rounded-md transition-all cursor-pointer ${isMale
+                                            ? 'bg-white text-blue-600 shadow-sm'
                                             : 'text-slate-600 hover:text-slate-800'
-                                    }`}
+                                        }`}
                                 >
                                     Chân mày nam
                                 </button>
@@ -196,22 +194,20 @@ export default function CustomerAwaitingItem({ aiFace }: CustomerAwaitingItemPro
                             <button
                                 type='button'
                                 onClick={() => handleGenderChange(false)}
-                                className={`flex-1 py-1 text-center text-[11px] font-bold rounded transition-all cursor-pointer ${
-                                    !isMale 
-                                        ? 'bg-white text-pink-600 shadow-sm' 
+                                className={`flex-1 py-1 text-center text-[11px] font-bold rounded transition-all cursor-pointer ${!isMale
+                                        ? 'bg-white text-pink-600 shadow-sm'
                                         : 'text-slate-505 text-slate-500'
-                                }`}
+                                    }`}
                             >
                                 Nữ
                             </button>
                             <button
                                 type='button'
                                 onClick={() => handleGenderChange(true)}
-                                className={`flex-1 py-1 text-center text-[11px] font-bold rounded transition-all cursor-pointer ${
-                                    isMale 
-                                        ? 'bg-white text-blue-600 shadow-sm' 
+                                className={`flex-1 py-1 text-center text-[11px] font-bold rounded transition-all cursor-pointer ${isMale
+                                        ? 'bg-white text-blue-600 shadow-sm'
                                         : 'text-slate-505 text-slate-500'
-                                }`}
+                                    }`}
                             >
                                 Nam
                             </button>
